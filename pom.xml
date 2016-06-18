@@ -40,7 +40,7 @@
             <dependency>
                 <groupId>com.adama</groupId>
                 <artifactId>adama-core</artifactId>
-                <version>0.0.1</version>
+                <version>${adama-core.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.amazonaws</groupId>
