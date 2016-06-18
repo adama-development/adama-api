@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <artifactId>adama-parent</artifactId>
+        <groupId>com.adama</groupId>
+        <version>0.1.0-SNAPSHOT</version>
+    </parent>
+    <artifactId>adama-core</artifactId>
+    <packaging>jar</packaging>
+    <dependencies>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-s3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.springfox</groupId>
+            <artifactId>springfox-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.springfox</groupId>
+            <artifactId>springfox-spring-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.springfox</groupId>
+            <artifactId>springfox-swagger2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>javax.inject</groupId>
+            <artifactId>javax.inject</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>ooxml-schemas</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.atteo</groupId>
+            <artifactId>evo-inflector</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
+        <!-- <dependency> -->
+        <!-- <groupId>io.swagger</groupId> -->
+        <!-- <artifactId>swagger-annotations</artifactId> -->
+        <!-- </dependency> -->
+        <!-- <dependency> -->
+        <!-- <groupId>javax.mail</groupId> -->
+        <!-- <artifactId>javax.mail-api</artifactId> -->
+        <!-- </dependency> -->
+        <!-- <dependency> -->
+        <!-- <groupId>javax.servlet</groupId> -->
+        <!-- <artifactId>servlet-api</artifactId> -->
+        <!-- </dependency> -->
+        <!-- <dependency> -->
+        <!-- <groupId>javax.validation</groupId> -->
+        <!-- <artifactId>validation-api</artifactId> -->
+        <!-- </dependency> -->
+        <!-- <dependency> -->
+        <!-- <groupId>org.hibernate</groupId> -->
+        <!-- <artifactId>hibernate-validator</artifactId> -->
+        <!-- </dependency> -->
+        <!-- <dependency> -->
+        <!-- <groupId>org.mongodb</groupId> -->
+        <!-- <artifactId>mongo-java-driver</artifactId> -->
+        <!-- </dependency> -->
+        <!-- <dependency> -->
+        <!-- <groupId>org.springframework</groupId> -->
+        <!-- <artifactId>spring-context-support</artifactId> -->
+        <!-- </dependency> -->
+        <!-- <dependency> -->
+        <!-- <groupId>org.springframework</groupId> -->
+        <!-- <artifactId>spring-web</artifactId> -->
+        <!-- </dependency> -->
+        <!-- <dependency> -->
+        <!-- <groupId>org.springframework</groupId> -->
+        <!-- <artifactId>spring-webmvc</artifactId> -->
+        <!-- </dependency> -->
+        <!-- <dependency> -->
+        <!-- <groupId>org.springframework.boot</groupId> -->
+        <!-- <artifactId>spring-boot</artifactId> -->
+        <!-- </dependency> -->
+        <!-- <dependency> -->
+        <!-- <groupId>org.springframework.data</groupId> -->
+        <!-- <artifactId>spring-data-commons</artifactId> -->
+        <!-- </dependency> -->
+        <!-- <dependency> -->
+        <!-- <groupId>org.springframework.data</groupId> -->
+        <!-- <artifactId>spring-data-mongodb</artifactId> -->
+        <!-- </dependency> -->
+        <!-- <dependency> -->
+        <!-- <groupId>org.springframework.security</groupId> -->
+        <!-- <artifactId>spring-security-config</artifactId> -->
+        <!-- </dependency> -->
+        <!-- <dependency> -->
+        <!-- <groupId>org.springframework.security</groupId> -->
+        <!-- <artifactId>spring-security-core</artifactId> -->
+        <!-- </dependency> -->
+        <!-- <dependency> -->
+        <!-- <groupId>org.springframework.security</groupId> -->
+        <!-- <artifactId>spring-security-web</artifactId> -->
+        <!-- </dependency> -->
+        <!-- <dependency> -->
+        <!-- <groupId>org.thymeleaf</groupId> -->
+        <!-- <artifactId>thymeleaf</artifactId> -->
+        <!-- </dependency> -->
+        <!-- <dependency> -->
+        <!-- <groupId>org.thymeleaf</groupId> -->
+        <!-- <artifactId>thymeleaf-spring4</artifactId> -->
+        <!-- </dependency> -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-mongodb</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-thymeleaf</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-data</artifactId>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins />
+    </build>
+</project>
