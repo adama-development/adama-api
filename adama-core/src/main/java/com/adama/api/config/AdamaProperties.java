@@ -15,21 +15,13 @@ import lombok.Data;
 @Data
 @ConfigurationProperties(prefix = "adama", ignoreUnknownFields = false)
 public class AdamaProperties {
-
 	private final Http http = new Http();
-
 	private final Mail mail = new Mail();
-
 	private final Security security = new Security();
-
 	private final Async async = new Async();
-
 	private final Swagger swagger = new Swagger();
-
 	private final CorsConfiguration cors = new CorsConfiguration();
-
 	private final S3Configuration s3 = new S3Configuration();
-	
 	private final IonicConfiguration ionic = new IonicConfiguration();
 
 	@Data
@@ -51,7 +43,6 @@ public class AdamaProperties {
 	@Data
 	public static class Security {
 		private final Authentication authentication = new Authentication();
-
 		private String defaultFirstLogin = "admin";
 		private String defaultFirstPassword = "admin";
 
@@ -97,7 +88,7 @@ public class AdamaProperties {
 		private String secretKey;
 		private long urlValidityInSeconds = 600;
 	}
-	
+
 	@Data
 	public static class IonicConfiguration {
 		private String apiKey;

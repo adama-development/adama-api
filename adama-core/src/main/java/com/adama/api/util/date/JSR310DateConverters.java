@@ -9,12 +9,10 @@ import java.util.Date;
 import org.springframework.core.convert.converter.Converter;
 
 public final class JSR310DateConverters {
-
 	private JSR310DateConverters() {
 	}
 
 	public static class LocalDateToDateConverter implements Converter<LocalDate, Date> {
-
 		public static final LocalDateToDateConverter INSTANCE = new LocalDateToDateConverter();
 
 		private LocalDateToDateConverter() {
@@ -57,7 +55,7 @@ public final class JSR310DateConverters {
 			return source == null ? null : ZonedDateTime.ofInstant(source.toInstant(), ZoneId.systemDefault());
 		}
 	}
-	
+
 	public static class ZonedDateTimeToStringConverter implements Converter<ZonedDateTime, String> {
 		public static final ZonedDateTimeToStringConverter INSTANCE = new ZonedDateTimeToStringConverter();
 
@@ -79,7 +77,7 @@ public final class JSR310DateConverters {
 			return source == null ? null : ZonedDateTime.parse(source);
 		}
 	}
-	
+
 	public static class LocalDateTimeToStringConverter implements Converter<LocalDate, String> {
 		public static final LocalDateTimeToStringConverter INSTANCE = new LocalDateTimeToStringConverter();
 

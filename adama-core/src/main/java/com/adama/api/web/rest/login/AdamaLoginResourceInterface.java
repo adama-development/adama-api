@@ -20,7 +20,6 @@ import io.swagger.annotations.ApiResponses;
  * Rest resource for login and refresh token
  */
 public interface AdamaLoginResourceInterface<U extends AdamaUser<? extends DeleteEntityAbstract>> {
-
 	/**
 	 * Authorize a user and give a token to access the resources and a
 	 * refreshtoken to refresh this token
@@ -29,10 +28,8 @@ public interface AdamaLoginResourceInterface<U extends AdamaUser<? extends Delet
 	 * @param response
 	 * @return {@link TokenDTO}
 	 */
-
 	@ApiOperation(value = "Authorize a user and give a token to access the resources and a refreshtoken to refresh this token", produces = MediaType.APPLICATION_JSON_VALUE)
-	@ApiResponses(value = { @ApiResponse(code = 200, response = TokenDTO.class, message = "Authorized"),
-			@ApiResponse(code = 401, message = "Not Authorized", response = String.class)})
+	@ApiResponses(value = { @ApiResponse(code = 200, response = TokenDTO.class, message = "Authorized"), @ApiResponse(code = 401, message = "Not Authorized", response = String.class) })
 	public abstract ResponseEntity<?> authorize(LoginDTO loginDTO, HttpServletResponse response);
 
 	/**
@@ -46,5 +43,4 @@ public interface AdamaLoginResourceInterface<U extends AdamaUser<? extends Delet
 	@ApiResponses(value = { @ApiResponse(code = 200, response = TokenDTO.class, message = "Authorized"),
 			@ApiResponse(code = 400, message = "Refresh Token, Access Token or User not valid", response = String.class) })
 	public abstract ResponseEntity<?> refresh(RefreshDTO refreshDTO, HttpServletRequest request);
-
 }

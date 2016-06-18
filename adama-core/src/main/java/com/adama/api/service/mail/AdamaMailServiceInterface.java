@@ -6,7 +6,6 @@ import com.adama.api.domain.user.AdamaUser;
 import com.adama.api.domain.util.domain.abst.delete.DeleteEntityAbstract;
 
 public interface AdamaMailServiceInterface<U extends AdamaUser<? extends DeleteEntityAbstract>> {
-
 	/**
 	 * send email when account is created for asking password
 	 * 

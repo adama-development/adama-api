@@ -44,9 +44,8 @@ import lombok.extern.slf4j.Slf4j;
  * REST controller for managing Entity.
  */
 @Slf4j
-public abstract class AdamaResourceAbstract<D extends DeleteEntityAbstract, T extends AdamaDtoAbstract, S extends AdamaServiceInterface<D>, M extends DTOMapperInterface<D, T>>
-		implements AdamaResourceInterface<D, T> {
-
+public abstract class AdamaResourceAbstract<D extends DeleteEntityAbstract, T extends AdamaDtoAbstract, S extends AdamaServiceInterface<D>, M extends DTOMapperInterface<D, T>> implements
+		AdamaResourceInterface<D, T> {
 	private S service;
 	private M mapper;
 	public static String entityName;
@@ -64,8 +63,7 @@ public abstract class AdamaResourceAbstract<D extends DeleteEntityAbstract, T ex
 	public ResponseEntity<T> createEntity(@Valid @RequestBody T entity, HttpServletRequest request) throws URISyntaxException {
 		log.info("REST request to save {} : {}", service, entity);
 		if (entity.getId() != null) {
-			return ResponseEntity.badRequest()
-					.headers(HeaderUtil.createFailureAlert(entityName, "A new " + entityName + " cannot already have an ID")).body(null);
+			return ResponseEntity.badRequest().headers(HeaderUtil.createFailureAlert(entityName, "A new " + entityName + " cannot already have an ID")).body(null);
 		}
 		T result = mapper.entityToDto(service.save(mapper.dtoToEntity(entity)));
 		log.error("REST request to save {} : {}", service, result);
@@ -80,8 +78,7 @@ public abstract class AdamaResourceAbstract<D extends DeleteEntityAbstract, T ex
 			return createEntity(entity, request);
 		} else {
 			if (service.findOne(entity.getId()) == null) {
-				return ResponseEntity.badRequest()
-						.headers(HeaderUtil.createFailureAlert(entityName, "A update " + entityName + " must have an ID wich exists")).body(null);
+				return ResponseEntity.badRequest().headers(HeaderUtil.createFailureAlert(entityName, "A update " + entityName + " must have an ID wich exists")).body(null);
 			}
 		}
 		T result = mapper.entityToDto(service.save(mapper.dtoToEntity(entity)));
@@ -90,16 +87,15 @@ public abstract class AdamaResourceAbstract<D extends DeleteEntityAbstract, T ex
 
 	@Override
 	@Transactional(readOnly = true)
-	public ResponseEntity<?> getAllEntities(@RequestParam(required = false) String search, @RequestParam(required = false) Boolean all,
-			Pageable pageable, HttpServletRequest request) throws URISyntaxException, ExcelException {
+	public ResponseEntity<?> getAllEntities(@RequestParam(required = false) String search, @RequestParam(required = false) Boolean all, Pageable pageable, HttpServletRequest request)
+			throws URISyntaxException, ExcelException {
 		log.debug("REST request to get a page of {}", pageable);
 		if (search != null) {
 			Page<D> page = service.searchAll(search, pageable);
 			if (headerIsExcel(request)) {
 				return getExcelResponse(generateExcel(page.getContent()));
 			}
-			HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(page,
-					"" + request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE), Optional.ofNullable(search));
+			HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(page, "" + request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE), Optional.ofNullable(search));
 			return new ResponseEntity<>(mapper.entitiesToDtos(page.getContent()), headers, HttpStatus.OK);
 		}
 		if (all != null && all) {
@@ -111,16 +107,14 @@ public abstract class AdamaResourceAbstract<D extends DeleteEntityAbstract, T ex
 			if (headerIsExcel(request)) {
 				return getExcelResponse(generateExcel(page.getContent()));
 			}
-			HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(page,
-					"" + request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE), Optional.ofNullable(search));
+			HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(page, "" + request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE), Optional.ofNullable(search));
 			return new ResponseEntity<>(mapper.entitiesToDtos(page.getContent()), headers, HttpStatus.OK);
 		}
 		Page<D> page = service.findAll(pageable);
 		if (headerIsExcel(request)) {
 			return getExcelResponse(generateExcel(page.getContent()));
 		}
-		HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(page,
-				"" + request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE), Optional.empty());
+		HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(page, "" + request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE), Optional.empty());
 		return new ResponseEntity<>(mapper.entitiesToDtos(page.getContent()), headers, HttpStatus.OK);
 	}
 
@@ -129,8 +123,7 @@ public abstract class AdamaResourceAbstract<D extends DeleteEntityAbstract, T ex
 	public ResponseEntity<T> getEntity(@PathVariable String id) {
 		log.debug("REST request to get {} : {}", entityName, id);
 		T entityDto = mapper.entityToDto(service.findOne(id));
-		return Optional.ofNullable(entityDto).map(result -> new ResponseEntity<>(result, HttpStatus.OK))
-				.orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+		return Optional.ofNullable(entityDto).map(result -> new ResponseEntity<>(result, HttpStatus.OK)).orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
 	}
 
 	@Override
@@ -175,7 +168,6 @@ public abstract class AdamaResourceAbstract<D extends DeleteEntityAbstract, T ex
 
 	protected ResponseEntity<?> getExcelResponse(InputStream inputStream) {
 		return ResponseEntity.ok().contentType(MediaType.parseMediaType("application/vnd.ms-excel"))
-				.header("Content-Disposition", "attachment;filename = " + sdf.format(new Date()) + "_" + entityName + ".xlsx")
-				.body(new InputStreamResource(inputStream));
+				.header("Content-Disposition", "attachment;filename = " + sdf.format(new Date()) + "_" + entityName + ".xlsx").body(new InputStreamResource(inputStream));
 	}
 }

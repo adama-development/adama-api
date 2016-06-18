@@ -13,11 +13,8 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = false)
 public class TokenDTO extends RefreshDTO {
-
-    public static final String ACCESS_TOKEN_FIELD_NAME = "access_token";
-
-    @NotNull
-    @JsonProperty(ACCESS_TOKEN_FIELD_NAME)
-    private String accessToken;
-
+	public static final String ACCESS_TOKEN_FIELD_NAME = "access_token";
+	@NotNull
+	@JsonProperty(ACCESS_TOKEN_FIELD_NAME)
+	private String accessToken;
 }

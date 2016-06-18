@@ -11,20 +11,16 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * Base abstract class for entities which will be in multi-tenant
- * The model will be multi-tenant with the model which inherits AbstractDeleteEntity provided
+ * Base abstract class for entities which will be in multi-tenant The model will
+ * be multi-tenant with the model which inherits AbstractDeleteEntity provided
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
 public abstract class TenantEntityAbstract<D extends DeleteEntityAbstract> extends DeleteEntityAbstract {
-
-    private static final long serialVersionUID = 1L;
-
-    public static final String TENANT_FIELD_NAME = "tenant";
-
-    @Field(TENANT_FIELD_NAME)
-    @NotNull
-    @DBRef
-    private D tenant;
-
+	private static final long serialVersionUID = 1L;
+	public static final String TENANT_FIELD_NAME = "tenant";
+	@Field(TENANT_FIELD_NAME)
+	@NotNull
+	@DBRef
+	private D tenant;
 }

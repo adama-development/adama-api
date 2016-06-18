@@ -13,11 +13,8 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = false)
 public class RefreshDTO extends RememberMeDTO {
-
-    public static final String REFRESH_TOKEN_FIELD_NAME = "refresh_token";
-
-    @NotNull
-    @JsonProperty(REFRESH_TOKEN_FIELD_NAME)
-    private String refreshToken;
-
+	public static final String REFRESH_TOKEN_FIELD_NAME = "refresh_token";
+	@NotNull
+	@JsonProperty(REFRESH_TOKEN_FIELD_NAME)
+	private String refreshToken;
 }

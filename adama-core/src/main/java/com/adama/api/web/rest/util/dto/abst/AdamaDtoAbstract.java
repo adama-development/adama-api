@@ -8,8 +8,7 @@ import lombok.Data;
 
 @Data
 public abstract class AdamaDtoAbstract {
-
 	@ApiModelProperty(value = "The id of this entity")
-    @JsonProperty(DeleteEntityAbstract.ID_FIELD_NAME)
-    private String id;
+	@JsonProperty(DeleteEntityAbstract.ID_FIELD_NAME)
+	private String id;
 }

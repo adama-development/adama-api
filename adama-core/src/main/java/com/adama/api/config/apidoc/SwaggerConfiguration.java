@@ -29,7 +29,6 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @Configuration
 @EnableSwagger2
 public class SwaggerConfiguration {
-
 	/**
 	 * Swagger Springfox configuration.
 	 *
@@ -42,24 +41,14 @@ public class SwaggerConfiguration {
 		log.debug("Starting Swagger");
 		StopWatch watch = new StopWatch();
 		watch.start();
-		Contact contact = new Contact(adamaProperties.getSwagger().getContactName(),
-				adamaProperties.getSwagger().getContactUrl(), adamaProperties.getSwagger().getContactEmail());
-
-		ApiInfo apiInfo = new ApiInfo(adamaProperties.getSwagger().getTitle(),
-				adamaProperties.getSwagger().getDescription(), adamaProperties.getSwagger().getVersion(),
-				adamaProperties.getSwagger().getTermsOfServiceUrl(), contact, adamaProperties.getSwagger().getLicense(),
-				adamaProperties.getSwagger().getLicenseUrl());
-
-		Docket docket = new Docket(DocumentationType.SWAGGER_2).apiInfo(apiInfo).forCodeGeneration(true)
-				.genericModelSubstitutes(ResponseEntity.class).ignoredParameterTypes(Pageable.class)
-				.useDefaultResponseMessages(false).directModelSubstitute(java.time.ZonedDateTime.class, Date.class)
-				.directModelSubstitute(java.time.LocalDateTime.class, Date.class).select()
-				.apis(Predicates.not(RequestHandlerSelectors.basePackage("org.springframework.boot")))				
-				.paths(regex("/.*")).build();
-
+		Contact contact = new Contact(adamaProperties.getSwagger().getContactName(), adamaProperties.getSwagger().getContactUrl(), adamaProperties.getSwagger().getContactEmail());
+		ApiInfo apiInfo = new ApiInfo(adamaProperties.getSwagger().getTitle(), adamaProperties.getSwagger().getDescription(), adamaProperties.getSwagger().getVersion(), adamaProperties.getSwagger()
+				.getTermsOfServiceUrl(), contact, adamaProperties.getSwagger().getLicense(), adamaProperties.getSwagger().getLicenseUrl());
+		Docket docket = new Docket(DocumentationType.SWAGGER_2).apiInfo(apiInfo).forCodeGeneration(true).genericModelSubstitutes(ResponseEntity.class).ignoredParameterTypes(Pageable.class)
+				.useDefaultResponseMessages(false).directModelSubstitute(java.time.ZonedDateTime.class, Date.class).directModelSubstitute(java.time.LocalDateTime.class, Date.class).select()
+				.apis(Predicates.not(RequestHandlerSelectors.basePackage("org.springframework.boot"))).paths(regex("/.*")).build();
 		watch.stop();
 		log.debug("Started Swagger in {} ms", watch.getTotalTimeMillis());
 		return docket;
 	}
-
 }

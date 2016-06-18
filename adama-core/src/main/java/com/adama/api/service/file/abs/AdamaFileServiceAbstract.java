@@ -27,9 +27,7 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectResult;
 import com.amazonaws.services.s3.model.S3Object;
 
-public abstract class AdamaFileServiceAbstract<A extends AdamaFileAbstract, R extends AdamaFileRepositoryInterface<A>> implements
-		AdamaFileServiceInterface<A> {
-
+public abstract class AdamaFileServiceAbstract<A extends AdamaFileAbstract, R extends AdamaFileRepositoryInterface<A>> implements AdamaFileServiceInterface<A> {
 	private AdamaFileRepositoryInterface<A> repo;
 	private AdamaProperties adamaProperties;
 
@@ -45,8 +43,7 @@ public abstract class AdamaFileServiceAbstract<A extends AdamaFileAbstract, R ex
 	@Override
 	public URL getFileUrl(A adamaFile) throws UnsupportedEncodingException {
 		if (adamaFile != null && adamaFile.getFolder() != null && adamaFile.getFileName() != null) {
-			AmazonS3Client client = new AmazonS3Client(new BasicAWSCredentials(adamaProperties.getS3().getAccessKey(), adamaProperties.getS3()
-					.getSecretKey()));
+			AmazonS3Client client = new AmazonS3Client(new BasicAWSCredentials(adamaProperties.getS3().getAccessKey(), adamaProperties.getS3().getSecretKey()));
 			Date expiredDate = Date.from(ZonedDateTime.now().plusSeconds(adamaProperties.getS3().getUrlValidityInSeconds()).toInstant());
 			String fileKey = URLDecoder.decode(adamaFile.getFolder(), "UTF-8") + "/" + URLDecoder.decode(adamaFile.getFileName(), "UTF-8");
 			GeneratePresignedUrlRequest generatePresignedUrlRequest = new GeneratePresignedUrlRequest(adamaProperties.getS3().getBucket(), fileKey);
@@ -67,9 +64,7 @@ public abstract class AdamaFileServiceAbstract<A extends AdamaFileAbstract, R ex
 
 	@Override
 	public A saveFile(A adamaFile, InputStream inputStream) {
-		AmazonS3Client client = new AmazonS3Client(new BasicAWSCredentials(adamaProperties.getS3().getAccessKey(), adamaProperties.getS3()
-				.getSecretKey()));
-
+		AmazonS3Client client = new AmazonS3Client(new BasicAWSCredentials(adamaProperties.getS3().getAccessKey(), adamaProperties.getS3().getSecretKey()));
 		ObjectMetadata metadata = new ObjectMetadata();
 		if (adamaFile.getSize() != null && adamaFile.getSize() != 0 && adamaFile.getSize() != -1) {
 			metadata.setContentLength(adamaFile.getSize());
@@ -86,23 +81,20 @@ public abstract class AdamaFileServiceAbstract<A extends AdamaFileAbstract, R ex
 		metadata.setContentType(adamaFile.getContentType());
 		PutObjectResult result;
 		if (adamaFile.getIsPublic()) {
-			result = client.putObject(new PutObjectRequest(adamaProperties.getS3().getBucket(),
-					adamaFile.getFolder() + "/" + adamaFile.getFileName(), inputStream, metadata).withCannedAcl(CannedAccessControlList.PublicRead));
+			result = client.putObject(new PutObjectRequest(adamaProperties.getS3().getBucket(), adamaFile.getFolder() + "/" + adamaFile.getFileName(), inputStream, metadata)
+					.withCannedAcl(CannedAccessControlList.PublicRead));
 		} else {
-			result = client.putObject(new PutObjectRequest(adamaProperties.getS3().getBucket(),
-					adamaFile.getFolder() + "/" + adamaFile.getFileName(), inputStream, metadata));
+			result = client.putObject(new PutObjectRequest(adamaProperties.getS3().getBucket(), adamaFile.getFolder() + "/" + adamaFile.getFileName(), inputStream, metadata));
 		}
 		if (result == null) {
 			return null;
 		}
 		return repo.save(adamaFile);
-
 	}
 
 	@Override
 	public InputStream getFileInputStream(A adamaFile) throws UnsupportedEncodingException {
-		AmazonS3Client client = new AmazonS3Client(new BasicAWSCredentials(adamaProperties.getS3().getAccessKey(), adamaProperties.getS3()
-				.getSecretKey()));
+		AmazonS3Client client = new AmazonS3Client(new BasicAWSCredentials(adamaProperties.getS3().getAccessKey(), adamaProperties.getS3().getSecretKey()));
 		String fileKey = URLDecoder.decode(adamaFile.getFolder(), "UTF-8") + "/" + URLDecoder.decode(adamaFile.getFileName(), "UTF-8");
 		S3Object s3Object = client.getObject(adamaProperties.getS3().getBucket(), fileKey);
 		return s3Object.getObjectContent();
@@ -115,5 +107,4 @@ public abstract class AdamaFileServiceAbstract<A extends AdamaFileAbstract, R ex
 	public void setAdamaProperties(AdamaProperties adamaProperties) {
 		this.adamaProperties = adamaProperties;
 	}
-
 }

@@ -20,34 +20,33 @@ import io.jsonwebtoken.JwtException;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Filters incoming requests and installs a Spring Security principal if a header corresponding to a valid user is found.
+ * Filters incoming requests and installs a Spring Security principal if a
+ * header corresponding to a valid user is found.
  */
 @Slf4j
-public abstract class JWTFilterAbstract<T extends TokenProviderAbstract<?,?>> extends GenericFilterBean {
+public abstract class JWTFilterAbstract<T extends TokenProviderAbstract<?, ?>> extends GenericFilterBean {
+	private T tokenProvider;
 
-    private T tokenProvider;
-
-    public JWTFilterAbstract(T tokenProvider) {
-	this.tokenProvider = tokenProvider;
-    }
-
-    @Override
-    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
-	try {
-	    HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequest;
-	    JWTUtils.resolveToken(httpServletRequest).ifPresent(jwt -> {
-		if (StringUtils.hasText(jwt)) {
-		    if (this.tokenProvider.validateToken(jwt)) {
-			Authentication authentication = this.tokenProvider.getAuthentication(jwt);
-			SecurityContextHolder.getContext().setAuthentication(authentication);
-		    }
-		}
-	    });
-	    filterChain.doFilter(servletRequest, servletResponse);
-	} catch (JwtException cje) {
-	    log.info("Security exception {}", cje.getMessage());
-	    ((HttpServletResponse) servletResponse).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+	public JWTFilterAbstract(T tokenProvider) {
+		this.tokenProvider = tokenProvider;
 	}
-    }
 
+	@Override
+	public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+		try {
+			HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequest;
+			JWTUtils.resolveToken(httpServletRequest).ifPresent(jwt -> {
+				if (StringUtils.hasText(jwt)) {
+					if (this.tokenProvider.validateToken(jwt)) {
+						Authentication authentication = this.tokenProvider.getAuthentication(jwt);
+						SecurityContextHolder.getContext().setAuthentication(authentication);
+					}
+				}
+			});
+			filterChain.doFilter(servletRequest, servletResponse);
+		} catch (JwtException cje) {
+			log.info("Security exception {}", cje.getMessage());
+			((HttpServletResponse) servletResponse).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+		}
+	}
 }

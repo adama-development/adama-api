@@ -10,10 +10,9 @@ import com.adama.api.util.security.SecurityUtils;
  */
 @Component
 public class SpringSecurityAuditorAware implements AuditorAware<String> {
-
-    @Override
-    public String getCurrentAuditor() {
-	String userName = SecurityUtils.getCurrentUserLogin().orElse("Unknow");
-	return userName;
-    }
+	@Override
+	public String getCurrentAuditor() {
+		String userName = SecurityUtils.getCurrentUserLogin().orElse("Unknow");
+		return userName;
+	}
 }

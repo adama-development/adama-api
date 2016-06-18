@@ -22,8 +22,8 @@ import com.adama.api.service.util.service.AdamaServiceInterface;
 import com.adama.api.web.rest.util.dto.abst.AdamaDtoAbstract;
 import com.adama.api.web.rest.util.mapper.DTOMapperInterface;
 
-public abstract class AdamaResourceAbstractWithMapping<D extends DeleteEntityAbstract, T extends AdamaDtoAbstract, S extends AdamaServiceInterface<D>, M extends DTOMapperInterface<D, T>> extends AdamaResourceAbstract<D, T, S, M>{
-
+public abstract class AdamaResourceAbstractWithMapping<D extends DeleteEntityAbstract, T extends AdamaDtoAbstract, S extends AdamaServiceInterface<D>, M extends DTOMapperInterface<D, T>> extends
+		AdamaResourceAbstract<D, T, S, M> {
 	public AdamaResourceAbstractWithMapping(Class<D> entity) {
 		super(entity);
 	}
@@ -59,10 +59,7 @@ public abstract class AdamaResourceAbstractWithMapping<D extends DeleteEntityAbs
 		return super.deleteEntity(id);
 	}
 
-	public abstract void init() ;
-	
+	public abstract void init();
 
-	public abstract InputStream generateExcel(List<D> entitities) throws ExcelException ;
-	
-
+	public abstract InputStream generateExcel(List<D> entitities) throws ExcelException;
 }

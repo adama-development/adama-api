@@ -12,9 +12,7 @@ import com.adama.api.service.util.service.AdamaServiceInterface;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public abstract class AdamaServiceAbstract<D extends DeleteEntityAbstract, R extends AdamaMongoRepository<D, String>> implements
-		AdamaServiceInterface<D> {
-
+public abstract class AdamaServiceAbstract<D extends DeleteEntityAbstract, R extends AdamaMongoRepository<D, String>> implements AdamaServiceInterface<D> {
 	private R repo;
 
 	@PostConstruct
@@ -62,5 +60,4 @@ public abstract class AdamaServiceAbstract<D extends DeleteEntityAbstract, R ext
 	public void setRepo(R repo) {
 		this.repo = repo;
 	}
-
 }

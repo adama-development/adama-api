@@ -20,7 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 @EnableAsync
 @EnableScheduling
 public class AsyncConfiguration implements AsyncConfigurer {
-
 	@Inject
 	private AdamaProperties adamaProperties;
 

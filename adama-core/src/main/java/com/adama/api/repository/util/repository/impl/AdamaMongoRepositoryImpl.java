@@ -19,9 +19,7 @@ import com.adama.api.repository.util.repository.abst.AdamaMongoRepositoryAbstrac
  * 
  */
 @NoRepositoryBean
-public class AdamaMongoRepositoryImpl<T extends DeleteEntityAbstract, ID extends Serializable>
-		extends AdamaMongoRepositoryAbstract<T, ID> implements AdamaMongoRepository<T, ID> {
-
+public class AdamaMongoRepositoryImpl<T extends DeleteEntityAbstract, ID extends Serializable> extends AdamaMongoRepositoryAbstract<T, ID> implements AdamaMongoRepository<T, ID> {
 	public AdamaMongoRepositoryImpl(MongoEntityInformation<T, ID> metadata, MongoOperations mongoOperations) {
 		super(metadata, mongoOperations);
 	}
@@ -31,13 +29,10 @@ public class AdamaMongoRepositoryImpl<T extends DeleteEntityAbstract, ID extends
 		return mongoOperations.findById(id, entityInformation.getJavaType(), entityInformation.getCollectionName());
 	}
 
-	
-	
 	protected Criteria getIdCriteria(Object id) {
 		return where(entityInformation.getIdAttribute()).is(id);
 	}
-    
-	
+
 	protected Criteria getFilterCriteria() {
 		return Criteria.where(DeleteEntityAbstract.ACTIVE_FIELD_NAME).is(true);
 	}

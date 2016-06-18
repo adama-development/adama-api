@@ -14,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @ControllerAdvice
 public class ExceptionConfiguration {
-
 	/**
 	 * Catch all DuplicateKeyException and return Bad Request
 	 * 
@@ -22,8 +21,6 @@ public class ExceptionConfiguration {
 	@ExceptionHandler(value = DuplicateKeyException.class)
 	public <T> ResponseEntity<T> defaultDuplicateKeyErrorHandler(HttpServletRequest req, DuplicateKeyException dke) {
 		log.info("DuplicateKeyException : ", dke);
-		return ResponseEntity.badRequest().headers(HeaderUtil.createAlert("Entity duplicate " + dke.getRootCause().getMessage(), "Duplicate"))
-				.body(null);
+		return ResponseEntity.badRequest().headers(HeaderUtil.createAlert("Entity duplicate " + dke.getRootCause().getMessage(), "Duplicate")).body(null);
 	}
-
 }

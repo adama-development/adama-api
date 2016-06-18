@@ -9,30 +9,26 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * Base abstract class for entities which will hold an activated tag. If we delete the entity, the tag will be false
+ * Base abstract class for entities which will hold an activated tag. If we
+ * delete the entity, the tag will be false
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
-public abstract class DeleteEntityAbstract extends AuditingEntityAbstract  {
-
+public abstract class DeleteEntityAbstract extends AuditingEntityAbstract {
 	private static final long serialVersionUID = 1L;
-    
-    public static final String ACTIVE_FIELD_NAME = "active";
-    public static final String ID_FIELD_NAME = "id";
+	public static final String ACTIVE_FIELD_NAME = "active";
+	public static final String ID_FIELD_NAME = "id";
+	@Id
+	@Field(ID_FIELD_NAME)
+	private String id;
+	@Field(ACTIVE_FIELD_NAME)
+	private Boolean active = true;
 
-    @Id
-    @Field(ID_FIELD_NAME)
-    private String id;
-
-    @Field(ACTIVE_FIELD_NAME)
-    private Boolean active = true;
-
-    public String getId() {
+	public String getId() {
 		return id;
 	}
 
 	public void setId(String id) {
 		this.id = id;
 	}
-    
 }

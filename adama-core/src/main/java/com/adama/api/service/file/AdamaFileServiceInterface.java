@@ -11,16 +11,15 @@ import com.adama.api.domain.file.AdamaFileAbstract;
  *
  */
 public interface AdamaFileServiceInterface<A extends AdamaFileAbstract> {
+	/**
+	 * Get the "id" adamaFile.
+	 * 
+	 * @param id
+	 *            the id of the entity
+	 * @return the entity
+	 */
+	A findOne(String id);
 
-    /**
-     * Get the "id" adamaFile.
-     * 
-     * @param id
-     *            the id of the entity
-     * @return the entity
-     */
-    A findOne(String id);
-	
 	/**
 	 * Get expiring url for the adamaFile
 	 * 
@@ -41,7 +40,7 @@ public interface AdamaFileServiceInterface<A extends AdamaFileAbstract> {
 	 * @return the file save in AdamaFile
 	 */
 	public A saveFile(A adamaFile, InputStream inputStream);
-	
+
 	/**
 	 * Get the inputStream from an AdamaFile
 	 * 
@@ -49,7 +48,7 @@ public interface AdamaFileServiceInterface<A extends AdamaFileAbstract> {
 	 *            the file to retrieve
 	 * 
 	 * @return the inputStream for the AdamaFile
-	 * @throws UnsupportedEncodingException 
+	 * @throws UnsupportedEncodingException
 	 */
 	public InputStream getFileInputStream(A adamaFile) throws UnsupportedEncodingException;
 }

@@ -22,9 +22,8 @@ import com.adama.api.util.security.SecurityUtils;
  * 
  */
 @NoRepositoryBean
-public abstract class AdamaMongoTenantRepositoryAbstract<D extends DeleteEntityAbstract, T extends TenantEntityAbstract<D>, ID extends Serializable>
-		extends AdamaMongoRepositoryAbstract<T, ID> implements AdamaMongoRepository<T, ID> {
-
+public abstract class AdamaMongoTenantRepositoryAbstract<D extends DeleteEntityAbstract, T extends TenantEntityAbstract<D>, ID extends Serializable> extends AdamaMongoRepositoryAbstract<T, ID>
+		implements AdamaMongoRepository<T, ID> {
 	public AdamaMongoTenantRepositoryAbstract(MongoEntityInformation<T, ID> metadata, MongoOperations mongoOperations) {
 		super(metadata, mongoOperations);
 	}
@@ -49,8 +48,7 @@ public abstract class AdamaMongoTenantRepositoryAbstract<D extends DeleteEntityA
 		T entity = mongoOperations.findById(id, entityInformation.getJavaType(), entityInformation.getCollectionName());
 		Assert.notNull(entity.getTenant(), "You are not loggued with a tenant can access this resource");
 		if (!SecurityUtils.isCurrentUserInRole(AdamaAuthoritiesConstants.ADMIN)) {
-			Assert.isTrue(entity.getTenant().getId().equals(getCurrentAuthTenant().getId()),
-					"You are not loggued with a tenant can access this resource");
+			Assert.isTrue(entity.getTenant().getId().equals(getCurrentAuthTenant().getId()), "You are not loggued with a tenant can access this resource");
 		}
 		return entity;
 	}
@@ -80,8 +78,8 @@ public abstract class AdamaMongoTenantRepositoryAbstract<D extends DeleteEntityA
 		if (SecurityUtils.isCurrentUserInRole(AdamaAuthoritiesConstants.ADMIN)) {
 			return Criteria.where(DeleteEntityAbstract.ACTIVE_FIELD_NAME).is(true);
 		} else {
-			return Criteria.where(DeleteEntityAbstract.ACTIVE_FIELD_NAME).is(true)
-					.and(TenantEntityAbstract.TENANT_FIELD_NAME + "." + TenantEntityAbstract.ID_FIELD_NAME).is(getCurrentAuthTenant().getId());
+			return Criteria.where(DeleteEntityAbstract.ACTIVE_FIELD_NAME).is(true).and(TenantEntityAbstract.TENANT_FIELD_NAME + "." + TenantEntityAbstract.ID_FIELD_NAME)
+					.is(getCurrentAuthTenant().getId());
 		}
 	}
 
@@ -91,5 +89,4 @@ public abstract class AdamaMongoTenantRepositoryAbstract<D extends DeleteEntityA
 		result.parallelStream().peek(entity -> entity.setTenant(tenant));
 		return result;
 	}
-
 }

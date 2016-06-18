@@ -13,22 +13,22 @@ import org.springframework.data.repository.NoRepositoryBean;
 import com.adama.api.domain.util.domain.abst.delete.DeleteEntityAbstract;
 
 /**
- * Adama Mongo specific {@link org.springframework.data.repository.Repository} interface.
+ * Adama Mongo specific {@link org.springframework.data.repository.Repository}
+ * interface.
  * 
  */
 @NoRepositoryBean
 public interface AdamaMongoRepository<T extends DeleteEntityAbstract, ID extends Serializable> extends MongoRepository<T, ID> {
+	/**
+	 * Search on the entity with the given key
+	 * 
+	 * @param key
+	 *            the key for the search
+	 * @param pageable
+	 * @return
+	 */
+	Page<T> search(String key, Pageable pageable);
 
-    /**
-     * Search on the entity with the given key
-     * 
-     * @param key
-     *            the key for the search
-     * @param pageable
-     * @return
-     */
-    Page<T> search(String key, Pageable pageable);
-    
 	/**
 	 * find all with the query and the pageable
 	 * 
@@ -36,24 +36,23 @@ public interface AdamaMongoRepository<T extends DeleteEntityAbstract, ID extends
 	 * @param pageable
 	 * @return
 	 */
-    Page<T> findAllQueryPageable(Optional<Query> query, Pageable pageable);
-    
+	Page<T> findAllQueryPageable(Optional<Query> query, Pageable pageable);
+
 	/**
 	 * find all with the query
 	 * 
 	 * @param query
-
+	 * 
 	 * @return
 	 */
 	List<T> findAll(Optional<Query> query);
-	
+
 	/**
 	 * find one with the query
 	 * 
 	 * @param query
-
+	 * 
 	 * @return
 	 */
 	T findOne(Optional<Query> query);
-	
 }

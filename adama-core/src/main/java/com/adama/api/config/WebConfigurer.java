@@ -25,38 +25,36 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Configuration
 public class WebConfigurer implements ServletContextInitializer, EmbeddedServletContainerCustomizer {
+	@Inject
+	private Environment env;
+	@Inject
+	private AdamaProperties adamaProperties;
 
-    @Inject
-    private Environment env;
-
-    @Inject
-    private AdamaProperties adamaProperties;
-
-    @Override
-    public void onStartup(ServletContext servletContext) throws ServletException {
-	log.info("Web application configuration, using profiles: {}", Arrays.toString(env.getActiveProfiles()));
-	log.info("Web application fully configured");
-    }
-
-    /**
-     * Set up Mime types and, if needed, set the document root.
-     */
-    @Override
-    public void customize(ConfigurableEmbeddedServletContainer container) {
-        MimeMappings mappings = new MimeMappings(MimeMappings.DEFAULT);
-        mappings.add("html", "text/html;charset=utf-8");
-        mappings.add("json", "text/html;charset=utf-8");
-        container.setMimeMappings(mappings);
-    }
-    
-    @Bean
-    public CorsFilter corsFilter() {
-	UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-	CorsConfiguration config = adamaProperties.getCors();
-	if (config.getAllowedOrigins() != null && !config.getAllowedOrigins().isEmpty()) {
-	    source.registerCorsConfiguration("/**", config);
-	    source.registerCorsConfiguration("/v2/api-docs", config);
+	@Override
+	public void onStartup(ServletContext servletContext) throws ServletException {
+		log.info("Web application configuration, using profiles: {}", Arrays.toString(env.getActiveProfiles()));
+		log.info("Web application fully configured");
 	}
-	return new CorsFilter(source);
-    }
+
+	/**
+	 * Set up Mime types and, if needed, set the document root.
+	 */
+	@Override
+	public void customize(ConfigurableEmbeddedServletContainer container) {
+		MimeMappings mappings = new MimeMappings(MimeMappings.DEFAULT);
+		mappings.add("html", "text/html;charset=utf-8");
+		mappings.add("json", "text/html;charset=utf-8");
+		container.setMimeMappings(mappings);
+	}
+
+	@Bean
+	public CorsFilter corsFilter() {
+		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+		CorsConfiguration config = adamaProperties.getCors();
+		if (config.getAllowedOrigins() != null && !config.getAllowedOrigins().isEmpty()) {
+			source.registerCorsConfiguration("/**", config);
+			source.registerCorsConfiguration("/v2/api-docs", config);
+		}
+		return new CorsFilter(source);
+	}
 }

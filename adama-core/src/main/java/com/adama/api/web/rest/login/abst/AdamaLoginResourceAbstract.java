@@ -40,29 +40,23 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 
 public abstract class AdamaLoginResourceAbstract<D extends DeleteEntityAbstract, A extends AdamaUser<D>> implements AdamaLoginResourceInterface<A> {
-
 	@Inject
 	private TokenProviderAbstract<D, A> tokenProvider;
-
 	@Inject
 	private AuthenticationManager authenticationManager;
-
 	@Inject
 	private AdamaUserServiceInterface<A> userService;
-
 	@Inject
 	private AdamaProperties adamaProperties;
 
 	@Override
 	@RequestMapping(value = "/authenticate", method = RequestMethod.POST)
 	public ResponseEntity<?> authorize(@Valid @RequestBody LoginDTO loginDTO, HttpServletResponse response) {
-		UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(loginDTO.getUsername(),
-				loginDTO.getPassword());
+		UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(loginDTO.getUsername(), loginDTO.getPassword());
 		try {
 			Authentication authentication = authenticationManager.authenticate(authenticationToken);
 			SecurityContextHolder.getContext().setAuthentication(authentication);
 			boolean rememberMe = (loginDTO.getRememberMe() == null) ? false : loginDTO.getRememberMe();
-
 			ZonedDateTime validityDate = tokenProvider.getExpiredTokenDate(rememberMe);
 			String accessToken = tokenProvider.createAccessToken(authentication, validityDate);
 			String refreshToken = tokenProvider.createRefreshToken(authentication);
@@ -70,7 +64,6 @@ public abstract class AdamaLoginResourceAbstract<D extends DeleteEntityAbstract,
 			tokenDTO.setAccessToken(accessToken);
 			tokenDTO.setRefreshToken(refreshToken);
 			tokenDTO.setRememberMe(loginDTO.getRememberMe());
-
 			response.addHeader(JWTUtils.AUTHORIZATION_HEADER, "Bearer " + accessToken);
 			return ResponseEntity.ok(tokenDTO);
 		} catch (AuthenticationException exception) {
@@ -85,13 +78,11 @@ public abstract class AdamaLoginResourceAbstract<D extends DeleteEntityAbstract,
 				.resolveToken(request)
 				.map(token -> {
 					try {
-						Jwts.parser().setSigningKey(adamaProperties.getSecurity().getAuthentication().getJwt().getSecret()).parseClaimsJws(token)
-								.getBody();
+						Jwts.parser().setSigningKey(adamaProperties.getSecurity().getAuthentication().getJwt().getSecret()).parseClaimsJws(token).getBody();
 					} catch (ExpiredJwtException eje) {
 						Claims claims = eje.getClaims();
 						String principal = claims.getSubject();
-						Collection<? extends GrantedAuthority> authorities = Arrays
-								.asList(claims.get(TokenProviderAbstract.AUTHORITIES_KEY).toString().split(",")).stream()
+						Collection<? extends GrantedAuthority> authorities = Arrays.asList(claims.get(TokenProviderAbstract.AUTHORITIES_KEY).toString().split(",")).stream()
 								.map(authority -> new SimpleGrantedAuthority(authority)).collect(Collectors.toList());
 						UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(principal, "", authorities);
 						Object details = claims.get(TokenProviderAbstract.TENANT_ID);
@@ -117,6 +108,5 @@ public abstract class AdamaLoginResourceAbstract<D extends DeleteEntityAbstract,
 					}
 					return new ResponseEntity<>("Access Token not expired", HttpStatus.BAD_REQUEST);
 				}).orElse(new ResponseEntity<>("Current Access Token is not valid", HttpStatus.BAD_REQUEST));
-
 	}
 }

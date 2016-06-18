@@ -36,7 +36,6 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public abstract class AdamaUserMailServiceAbstract<A extends AdamaUser<? extends DeleteEntityAbstract>> implements AdamaMailServiceInterface<A> {
-
 	private AdamaProperties adamaProperties;
 	private JavaMailSenderImpl javaMailSender;
 	private Environment env;
@@ -79,7 +78,6 @@ public abstract class AdamaUserMailServiceAbstract<A extends AdamaUser<? extends
 	@Async
 	public void sendEmail(String to, String subject, String content, boolean isMultipart, boolean isHtml) {
 		log.debug("Send e-mail[multipart '{}' and html '{}'] to '{}' with subject '{}' and content={}", isMultipart, isHtml, to, subject, content);
-
 		// Prepare message using a Spring helper
 		MimeMessage mimeMessage = javaMailSender.createMimeMessage();
 		try {
@@ -112,8 +110,7 @@ public abstract class AdamaUserMailServiceAbstract<A extends AdamaUser<? extends
 		printWriter.flush();
 		String stackTrace = writer.toString();
 		String uri = HttpUtils.getUriFromRequest(request);
-		String text = "An error occured in your application: " + e + "<br/><br/>For User:  " + emailUser + "<br/><br/><br/>" + "for URL :" + uri
-				+ "<br/><br/><br/>" + " for exception: " + stackTrace;
+		String text = "An error occured in your application: " + e + "<br/><br/>For User:  " + emailUser + "<br/><br/><br/>" + "for URL :" + uri + "<br/><br/><br/>" + " for exception: " + stackTrace;
 		sendEmail(adamaProperties.getMail().getError(), subject, text, false, true);
 	}
 
@@ -140,5 +137,4 @@ public abstract class AdamaUserMailServiceAbstract<A extends AdamaUser<? extends
 	public void setTemplateEngine(SpringTemplateEngine templateEngine) {
 		this.templateEngine = templateEngine;
 	}
-
 }

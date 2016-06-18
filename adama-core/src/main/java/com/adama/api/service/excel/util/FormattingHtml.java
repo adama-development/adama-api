@@ -28,9 +28,8 @@ public class FormattingHtml implements NodeVisitor {
 
 	private void append(String text) {
 		if (text.startsWith("\n"))
-		if (text.equals(" ") && (accum.length() == 0 || StringUtil.in(accum.substring(accum.length() - 1), " ", "\n")))
-			return;
-
+			if (text.equals(" ") && (accum.length() == 0 || StringUtil.in(accum.substring(accum.length() - 1), " ", "\n")))
+				return;
 		accum.append(text);
 	}
 

@@ -24,9 +24,8 @@ import lombok.extern.slf4j.Slf4j;
  * Abstract Service class for managing users.
  */
 @Slf4j
-public abstract class AdamaUserServiceAbstract<D extends DeleteEntityAbstract, A extends AdamaUser<D>, R extends AdamaMongoRepository<A, String>>
-		extends AdamaServiceAbstract<A, R> implements AdamaUserServiceInterface<A> {
-
+public abstract class AdamaUserServiceAbstract<D extends DeleteEntityAbstract, A extends AdamaUser<D>, R extends AdamaMongoRepository<A, String>> extends AdamaServiceAbstract<A, R> implements
+		AdamaUserServiceInterface<A> {
 	private PasswordEncoder passwordEncoder;
 	private AdamaUserRepositoryInterface<D, A> userRepository;
 
@@ -69,7 +68,7 @@ public abstract class AdamaUserServiceAbstract<D extends DeleteEntityAbstract, A
 		user.setResetKey(RandomUtil.generateResetKey());
 		user.setResetDate(ZonedDateTime.now());
 		if (user.getAuthority().equals(AdamaAuthoritiesConstants.ADMIN_AUTHORITY)) {
-			//For Admin authority, the user must have no tenant
+			// For Admin authority, the user must have no tenant
 			user.setTenant(null);
 		} else {
 			Assert.notNull(user.getTenant(), "For " + user.getAuthority() + " authority, the user must have a tenant");
@@ -109,5 +108,4 @@ public abstract class AdamaUserServiceAbstract<D extends DeleteEntityAbstract, A
 		this.userRepository = userRepository;
 		;
 	}
-
 }

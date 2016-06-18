@@ -6,9 +6,7 @@ import lombok.Data;
 
 @Data
 public class RememberMeDTO {
-    
-    public static final String REMEMBER_ME_FIELD_NAME = "remember_me";
-
-    @JsonIgnore
-    private Boolean rememberMe;
+	public static final String REMEMBER_ME_FIELD_NAME = "remember_me";
+	@JsonIgnore
+	private Boolean rememberMe;
 }

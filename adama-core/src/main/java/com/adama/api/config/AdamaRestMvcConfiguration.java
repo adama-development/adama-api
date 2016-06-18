@@ -13,12 +13,10 @@ import com.adama.api.domain.util.domain.abst.audit.AuditingEntityAbstract;
 
 @Configuration
 public class AdamaRestMvcConfiguration extends WebMvcConfigurerAdapter {
-
 	@Override
 	public void addArgumentResolvers(List<HandlerMethodArgumentResolver> argumentResolvers) {
 		PageableHandlerMethodArgumentResolver resolver = new PageableHandlerMethodArgumentResolver();
 		resolver.setFallbackPageable(new PageRequest(0, 10, new Sort(Sort.Direction.DESC, AuditingEntityAbstract.LASTMODIFIEDDATE_FIELD_NAME)));
 		argumentResolvers.add(resolver);
 	}
-
 }
