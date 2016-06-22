@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 import javax.annotation.PostConstruct;
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
@@ -30,6 +31,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.HandlerMapping;
 
 import com.adama.api.domain.util.domain.abst.delete.DeleteEntityAbstract;
+import com.adama.api.service.excel.ExcelServiceInterface;
 import com.adama.api.service.excel.exception.ExcelException;
 import com.adama.api.service.util.service.AdamaServiceInterface;
 import com.adama.api.web.rest.util.dto.abst.AdamaDtoAbstract;
@@ -46,10 +48,13 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class AdamaResourceAbstract<D extends DeleteEntityAbstract, T extends AdamaDtoAbstract, S extends AdamaServiceInterface<D>, M extends DTOMapperInterface<D, T>> implements
 		AdamaResourceInterface<D, T> {
+	private final Class<D> persistentClass;
 	private S service;
 	private M mapper;
 	public static String entityName;
 	public static String entityNamePlurial;
+	@Inject
+	private ExcelServiceInterface excelService;
 
 	@PostConstruct
 	public abstract void init();
@@ -57,6 +62,7 @@ public abstract class AdamaResourceAbstract<D extends DeleteEntityAbstract, T ex
 	public AdamaResourceAbstract(Class<D> entity) {
 		entityName = entity.getSimpleName();
 		entityNamePlurial = English.plural(entityName);
+		persistentClass = entity;
 	}
 
 	@Override
@@ -158,7 +164,9 @@ public abstract class AdamaResourceAbstract<D extends DeleteEntityAbstract, T ex
 	 * @param entitities
 	 *            list entities to put in excel
 	 */
-	public abstract InputStream generateExcel(List<D> entitities) throws ExcelException;
+	protected InputStream generateExcel(List<D> entitities) throws ExcelException {
+		return excelService.createExcel(entitities, persistentClass);
+	}
 
 	public Boolean headerIsExcel(HttpServletRequest request) {
 		return request.getHeader("Accept").equals("application/vnd.ms-excel");
