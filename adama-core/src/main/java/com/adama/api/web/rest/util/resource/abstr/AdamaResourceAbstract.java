@@ -13,7 +13,6 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
-import org.atteo.evo.inflector.English;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -51,8 +50,7 @@ public abstract class AdamaResourceAbstract<D extends DeleteEntityAbstract, T ex
 	private final Class<D> persistentClass;
 	private S service;
 	private M mapper;
-	public static String entityName;
-	public static String entityNamePlurial;
+	protected String entityName;
 	@Inject
 	private ExcelServiceInterface excelService;
 
@@ -61,7 +59,6 @@ public abstract class AdamaResourceAbstract<D extends DeleteEntityAbstract, T ex
 
 	public AdamaResourceAbstract(Class<D> entity) {
 		entityName = entity.getSimpleName();
-		entityNamePlurial = English.plural(entityName);
 		persistentClass = entity;
 	}
 
@@ -72,7 +69,7 @@ public abstract class AdamaResourceAbstract<D extends DeleteEntityAbstract, T ex
 			return ResponseEntity.badRequest().headers(HeaderUtil.createFailureAlert(entityName, "A new " + entityName + " cannot already have an ID")).body(null);
 		}
 		T result = mapper.entityToDto(service.save(mapper.dtoToEntity(entity)));
-		log.error("REST request to save {} : {}", service, result);
+		log.info("REST request to save {} : {}", service, result);
 		return ResponseEntity.created(new URI(request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE) + result.getId()))
 				.headers(HeaderUtil.createEntityCreationAlert(entityName, result.getId().toString())).body(result);
 	}
