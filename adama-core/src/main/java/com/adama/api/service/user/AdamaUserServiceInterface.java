@@ -17,7 +17,7 @@ public interface AdamaUserServiceInterface<A extends AdamaUser<? extends DeleteE
 	 * @param key
 	 * @return
 	 */
-	public abstract Optional<A> completePasswordReset(String newPassword, String key);
+	abstract Optional<A> completePasswordReset(String newPassword, String key);
 
 	/**
 	 * Prepare a reset Key for change the password
@@ -25,7 +25,7 @@ public interface AdamaUserServiceInterface<A extends AdamaUser<? extends DeleteE
 	 * @param mail
 	 * @return
 	 */
-	public abstract Optional<A> requestPasswordReset(String mail);
+	abstract Optional<A> requestPasswordReset(String mail);
 
 	/**
 	 * create a new user with password and reset key
@@ -33,14 +33,14 @@ public interface AdamaUserServiceInterface<A extends AdamaUser<? extends DeleteE
 	 * @param managedUser
 	 * @return
 	 */
-	public abstract A createUser(A managedUser);
+	abstract A createUser(A managedUser);
 
 	/**
 	 * Change password of an user
 	 * 
 	 * @param password
 	 */
-	public abstract void changePassword(String password);
+	abstract void changePassword(String password);
 
 	/**
 	 * Find one user by login
@@ -57,6 +57,7 @@ public interface AdamaUserServiceInterface<A extends AdamaUser<? extends DeleteE
 	 * @return
 	 */
 	Optional<A> findOneByEmail(String email);
+
 	//
 	// /**
 	// * Find all by Tenant
@@ -65,4 +66,8 @@ public interface AdamaUserServiceInterface<A extends AdamaUser<? extends DeleteE
 	// * @return
 	// */
 	// List<A> findAllByClient(D tenant);
+	/**
+	 * @return current user
+	 */
+	Optional<A> findCurrent();
 }

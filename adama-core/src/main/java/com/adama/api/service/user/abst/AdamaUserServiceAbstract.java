@@ -29,6 +29,7 @@ public abstract class AdamaUserServiceAbstract<D extends DeleteEntityAbstract, A
 	private PasswordEncoder passwordEncoder;
 	private AdamaUserRepositoryInterface<D, A> userRepository;
 
+	@Override
 	@PostConstruct
 	public abstract void init();
 
@@ -106,6 +107,14 @@ public abstract class AdamaUserServiceAbstract<D extends DeleteEntityAbstract, A
 
 	public void setUserRepository(AdamaUserRepositoryInterface<D, A> userRepository) {
 		this.userRepository = userRepository;
-		;
+	}
+
+	@Override
+	public Optional<A> findCurrent() {
+		Optional<String> currentUserLogin = SecurityUtils.getCurrentUserLogin();
+		if (!currentUserLogin.isPresent()) {
+			return Optional.empty();
+		}
+		return findOneByLogin(currentUserLogin.get());
 	}
 }
