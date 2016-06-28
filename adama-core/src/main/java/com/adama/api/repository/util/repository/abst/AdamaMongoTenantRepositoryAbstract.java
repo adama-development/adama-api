@@ -43,12 +43,12 @@ public abstract class AdamaMongoTenantRepositoryAbstract<D extends DeleteEntityA
 		return super.save(addClientToIterable(entities));
 	}
 
+	@Override
 	public T findOne(ID id) {
 		Assert.notNull(id, "The given id must not be null!");
 		T entity = mongoOperations.findById(id, entityInformation.getJavaType(), entityInformation.getCollectionName());
-		Assert.notNull(entity.getTenant(), "You are not loggued with a tenant can access this resource");
 		if (!SecurityUtils.isCurrentUserInRole(AdamaAuthoritiesConstants.ADMIN)) {
-			Assert.isTrue(entity.getTenant().getId().equals(getCurrentAuthTenant().getId()), "You are not loggued with a tenant can access this resource");
+			Assert.isTrue(entity.getTenant().getId().equals(getCurrentAuthTenant().getId()), "You are not logged with a tenant that can access this resource");
 		}
 		return entity;
 	}
@@ -66,21 +66,22 @@ public abstract class AdamaMongoTenantRepositoryAbstract<D extends DeleteEntityA
 		return super.insert(addClientToIterable(entities));
 	}
 
+	@Override
 	protected Criteria getIdCriteria(Object id) {
-		if (SecurityUtils.isCurrentUserInRole(AdamaAuthoritiesConstants.ADMIN)) {
-			return where(entityInformation.getIdAttribute()).is(id);
-		} else {
-			return where(entityInformation.getIdAttribute()).is(id).and(TenantEntityAbstract.TENANT_FIELD_NAME).is(getCurrentAuthTenant());
+		Criteria criteria = where(entityInformation.getIdAttribute()).is(id);
+		if (!SecurityUtils.isCurrentUserInRole(AdamaAuthoritiesConstants.ADMIN)) {
+			criteria = criteria.and(TenantEntityAbstract.TENANT_FIELD_NAME).is(getCurrentAuthTenant());
 		}
+		return criteria;
 	}
 
+	@Override
 	protected Criteria getFilterCriteria() {
-		if (SecurityUtils.isCurrentUserInRole(AdamaAuthoritiesConstants.ADMIN)) {
-			return Criteria.where(DeleteEntityAbstract.ACTIVE_FIELD_NAME).is(true);
-		} else {
-			return Criteria.where(DeleteEntityAbstract.ACTIVE_FIELD_NAME).is(true).and(TenantEntityAbstract.TENANT_FIELD_NAME + "." + TenantEntityAbstract.ID_FIELD_NAME)
-					.is(getCurrentAuthTenant().getId());
+		Criteria criteria = Criteria.where(DeleteEntityAbstract.ACTIVE_FIELD_NAME).is(true);
+		if (!SecurityUtils.isCurrentUserInRole(AdamaAuthoritiesConstants.ADMIN)) {
+			criteria = criteria.and(TenantEntityAbstract.TENANT_FIELD_NAME + "." + TenantEntityAbstract.ID_FIELD_NAME).is(getCurrentAuthTenant().getId());
 		}
+		return criteria;
 	}
 
 	private <S extends T> List<S> addClientToIterable(Iterable<S> entities) {
