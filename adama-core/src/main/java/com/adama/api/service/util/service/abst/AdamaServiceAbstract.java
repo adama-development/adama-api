@@ -1,5 +1,7 @@
 package com.adama.api.service.util.service.abst;
 
+import java.util.List;
+
 import javax.annotation.PostConstruct;
 
 import org.springframework.data.domain.Page;
@@ -18,34 +20,47 @@ public abstract class AdamaServiceAbstract<D extends DeleteEntityAbstract, R ext
 	@PostConstruct
 	public abstract void init();
 
+	@Override
 	public D save(D adamaEntity) {
 		log.debug("Request to save adamaEntity : {}", adamaEntity);
 		return repo.save(adamaEntity);
 	}
 
+	@Override
+	public List<D> findAll() {
+		log.debug("Request to get all Entities");
+		List<D> result = repo.findAll();
+		return result;
+	}
+
+	@Override
 	public Page<D> findAll(Pageable pageable) {
 		log.debug("Request to get all Entities");
 		Page<D> result = repo.findAll(pageable);
 		return result;
 	}
 
+	@Override
 	public D findOne(String id) {
 		log.debug("Request to get Entity : {}", id);
 		D entity = repo.findOne(id);
 		return entity;
 	}
 
+	@Override
 	public void delete(String id) {
 		log.debug("Request to delete Client : {}", id);
 		repo.delete(id);
 	}
 
+	@Override
 	public Page<D> searchAll(String key, Pageable pageable) {
 		log.debug("Request to search Entity with key : {}", key);
 		Page<D> result = repo.search(key, pageable);
 		return result;
 	}
 
+	@Override
 	public Long count() {
 		log.debug("Request to count all");
 		Long result = repo.count();

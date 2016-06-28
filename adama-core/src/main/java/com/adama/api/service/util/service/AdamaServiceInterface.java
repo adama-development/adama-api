@@ -1,5 +1,7 @@
 package com.adama.api.service.util.service;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -17,6 +19,13 @@ public interface AdamaServiceInterface<D extends DeleteEntityAbstract> {
 	 * @return the persisted entity
 	 */
 	D save(D adamaEntity);
+
+	/**
+	 * Get all the adamaEntitys.
+	 * 
+	 * @return the list of entities
+	 */
+	List<D> findAll();
 
 	/**
 	 * Get all the adamaEntitys.
