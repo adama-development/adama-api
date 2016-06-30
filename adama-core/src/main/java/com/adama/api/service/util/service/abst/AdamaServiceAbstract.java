@@ -1,5 +1,6 @@
 package com.adama.api.service.util.service.abst;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
@@ -45,6 +46,19 @@ public abstract class AdamaServiceAbstract<D extends DeleteEntityAbstract, R ext
 		log.debug("Request to get Entity : {}", id);
 		D entity = repo.findOne(id);
 		return entity;
+	}
+
+	@Override
+	public List<D> findMany(List<String> idList) {
+		// FIXME query at lower level to avoid multiple simple query
+		List<D> result = new ArrayList<>();
+		for (String id : idList) {
+			D entity = findOne(id);
+			if (entity != null) {
+				result.add(entity);
+			}
+		}
+		return result;
 	}
 
 	@Override
