@@ -39,6 +39,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <servlet-api.version>2.5</servlet-api.version>
         <springfox.version>2.4.0</springfox.version>
+        <wnameless.version>0.2.1</wnameless.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -56,6 +57,11 @@
                 <groupId>com.amazonaws</groupId>
                 <artifactId>aws-java-sdk-s3</artifactId>
                 <version>${aws-java-sdk-s3.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.wnameless</groupId>
+                <artifactId>json-flattener</artifactId>
+                <version>${wnameless.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-lang</groupId>
