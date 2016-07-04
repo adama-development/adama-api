@@ -14,11 +14,12 @@ public interface ExcelServiceInterface {
 	 * list
 	 * 
 	 * @param objectList
-	 * @param entityType
+	 * @param name
+	 *            of entity
 	 * @return {@link InputStream}
 	 * @throws {@link ExcelException}:
 	 */
-	public <T> InputStream createExcel(List<T> objectList, Class<T> entityType) throws ExcelException;
+	public <T> InputStream createExcel(List<T> objectList, String entityName) throws ExcelException;
 
 	/**
 	 * Read Excel file and if no id will create a new object, if have id it will

@@ -61,5 +61,5 @@ public abstract class AdamaResourceAbstractWithMapping<D extends DeleteEntityAbs
 
 	public abstract void init();
 
-	public abstract InputStream generateExcel(List<D> entitities) throws ExcelException;
+	public abstract InputStream generateExcel(List<T> entitities) throws ExcelException;
 }

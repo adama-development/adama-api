@@ -4,13 +4,14 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.lang.reflect.Field;
-import java.lang.reflect.ParameterizedType;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.apache.poi.EncryptedDocumentException;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -38,73 +39,69 @@ import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTTable;
 import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTTableColumn;
 import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTTableColumns;
 import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTTableStyleInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ReflectionUtils;
 
 import com.adama.api.domain.util.domain.abst.delete.DeleteEntityAbstract;
 import com.adama.api.repository.util.repository.AdamaMongoRepository;
 import com.adama.api.service.excel.ExcelServiceInterface;
-import com.adama.api.service.excel.annotation.ExcelIgnoreAnnotation;
 import com.adama.api.service.excel.exception.ExcelException;
 import com.adama.api.service.excel.util.FormattingHtml;
 import com.adama.api.service.util.service.AdamaServiceInterface;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.wnameless.json.flattener.JsonFlattener;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 public class ExcelServiceImpl implements ExcelServiceInterface {
-	protected Logger logger;
-
-	public ExcelServiceImpl() {
-		this.logger = LoggerFactory.getLogger(getClass());
-	}
-
 	private CellStyle dateCellStyle;
 	private CellStyle cellStyle;
-	private List<FieldWithObject> fieldOkObject = new ArrayList<>();
-	private List<FieldWithObject> fieldToReworkObject = new ArrayList<>();
 
 	@Override
-	public <T> InputStream createExcel(List<T> objectList, Class<T> entityType) throws ExcelException {
+	public <T> InputStream createExcel(List<T> objectList, String entityName) throws ExcelException {
 		XSSFWorkbook wb;
 		try {
-			wb = getWorkWook(entityType);
-			XSSFSheet entitySheet = wb.getSheet(entityType.getSimpleName());
-			int currentRowIndex = entitySheet.getLastRowNum() + 1;
+			wb = getWorkWook(entityName);
+			XSSFSheet entitySheet = wb.getSheet(entityName);
 			if (objectList != null && objectList.size() != 0) {
+				// create the style
 				this.dateCellStyle = wb.createCellStyle();
 				this.dateCellStyle.setDataFormat((short) BuiltinFormats.getBuiltinFormat("d-mmm-yy"));
 				this.dateCellStyle.setVerticalAlignment(CellStyle.VERTICAL_CENTER);
 				this.cellStyle = wb.createCellStyle();
 				this.cellStyle.setWrapText(true);
 				this.cellStyle.setVerticalAlignment(CellStyle.VERTICAL_CENTER);
+				// create a list of map for each object, each object could have
+				// a size of fieldName different
+				ObjectMapper mapper = new ObjectMapper();
+				List<Map<String, Object>> listMap = objectList.parallelStream().map(object -> {
+					try {
+						return JsonFlattener.flattenAsMap(mapper.writeValueAsString(object));
+					} catch (JsonProcessingException e) {
+						log.error(e.getMessage(), e);
+						throw new UncheckedIOException(e.getMessage(), e);
+					}
+				}).collect(Collectors.toList());
+				// we get a KeySet with all the elements of each keySet in
+				// alphabetical order
+				List<String> headerList = listMap.parallelStream().flatMap(map -> map.keySet().stream()).distinct().sorted((e1, e2) -> e1.compareToIgnoreCase(e2)).collect(Collectors.toList());
+				log.info("Header is : {}", headerList);
+				// we create the first Row with the keyName
+				Row firstRow = entitySheet.getRow(0);
+				IntStream.range(0, headerList.size()).forEach(i -> {
+					Cell cell = firstRow.createCell(i);
+					cell.setCellValue(headerList.get(i));
+				});
+				// we write the value of each object to the correct column one
+				// by one
+				int currentRowIndex = 1;
 				for (T object : objectList) {
 					Row rowToAddEntity = entitySheet.createRow(currentRowIndex);
-					this.fieldOkObject = new ArrayList<>();
-					this.fieldToReworkObject = new ArrayList<>();
-					this.fieldToReworkObject.add(new FieldWithObject((DeleteEntityAbstract) object, ReflectionUtils.findField(entityType, DeleteEntityAbstract.ID_FIELD_NAME),
-							DeleteEntityAbstract.ID_FIELD_NAME));
-					for (Field field : entityType.getDeclaredFields()) {
-						this.logger.info("FIELD : " + field.getName());
-						this.fieldToReworkObject.add(new FieldWithObject(object, field, this.createFieldName(field, null)));
-					}
-					while (this.fieldToReworkObject.size() != 0) {
-						this.sortFieldObject();
-					}
-					writeRow(rowToAddEntity, entitySheet);
+					writeRow(object, headerList.size(), rowToAddEntity, entitySheet);
 					currentRowIndex++;
-				}
-				Row firstRow = entitySheet.getRow(0);
-				int nbrOfColumn = firstRow.getLastCellNum() - 1;
-				// we clean the first row if name is duplicate
-				List<String> headerList = new ArrayList<String>();
-				for (int i = 0; i <= nbrOfColumn; i++) {
-					Cell cell = firstRow.getCell(i);
-					if (headerList.contains(cell.getStringCellValue())) {
-						cell.setCellValue(cell.getStringCellValue() + "." + i);
-					} else {
-						headerList.add(cell.getStringCellValue());
-					}
 				}
 				/* Create Table into Existing Sheet */
 				XSSFTable my_table = entitySheet.createTable();
@@ -117,16 +114,17 @@ public class ExcelServiceImpl implements ExcelServiceInterface {
 				table_style.setShowColumnStripes(false); // showColumnStripes=0
 				table_style.setShowRowStripes(true); // showRowStripes=1
 				/* Define the data range including headers */
-				AreaReference my_data_range = new AreaReference(new CellReference(0, 0), new CellReference(objectList.size(), nbrOfColumn));
+				AreaReference my_data_range = new AreaReference(new CellReference(0, 0), new CellReference(objectList.size(), headerList.size()));
 				/* Set Range to the Table */
 				cttable.setRef(my_data_range.formatAsString());
-				cttable.setDisplayName("Booking");
-				cttable.setName("booking");
+				cttable.setDisplayName(entityName);
+				cttable.setName(entityName.toUpperCase());
 				cttable.setId(1L);
 				CTTableColumns columns = cttable.addNewTableColumns();
-				columns.setCount(nbrOfColumn + 1); // define number of columns
+				columns.setCount(headerList.size() + 1); // define number of
+															// columns
 				CTAutoFilter autofilter = cttable.addNewAutoFilter();
-				for (int i = 0; i < nbrOfColumn + 1; i++) {
+				for (int i = 0; i < headerList.size() + 1; i++) {
 					CTTableColumn column = columns.addNewTableColumn();
 					column.setName("Column" + i);
 					column.setId(i + 1);
@@ -134,7 +132,7 @@ public class ExcelServiceImpl implements ExcelServiceInterface {
 					filter.setColId(i + 1);
 					filter.setShowButton(true);
 				}
-				for (int i = 0; i <= nbrOfColumn; i++) {
+				for (int i = 0; i <= headerList.size(); i++) {
 					entitySheet.autoSizeColumn(i);
 					// Include width of drop down button
 					if (entitySheet.getColumnWidth(i) < 65000) {
@@ -142,9 +140,9 @@ public class ExcelServiceImpl implements ExcelServiceInterface {
 					}
 				}
 			}
-			return commitChange(wb, entityType);
-		} catch (IOException | IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException e) {
-			this.logger.error(e.getMessage(), e);
+			return commitChange(wb, entityName);
+		} catch (IOException | IllegalArgumentException | IllegalAccessException | SecurityException e) {
+			log.error(e.getMessage(), e);
 			throw new ExcelException(e.getMessage(), e);
 		}
 	}
@@ -180,7 +178,7 @@ public class ExcelServiceImpl implements ExcelServiceInterface {
 				if (row.getCell(columnIdIndex) != null) {
 					id = row.getCell(columnIdIndex).getStringCellValue();
 				}
-				this.logger.info("id " + id);
+				log.info("id " + id);
 				T modelInstance = null;
 				// Boolean needUpate;
 				if (id != null && !id.trim().isEmpty()) {
@@ -207,7 +205,7 @@ public class ExcelServiceImpl implements ExcelServiceInterface {
 									Map<String, String> objectMap = (Map<String, String>) ReflectionUtils.getField(currentField, modelInstance);
 									ReflectionUtils.makeAccessible(currentField);
 									objectMap.put(fieldName, cell.getStringCellValue());
-									this.logger.info("for the key : " + fieldName + " We add the map: " + objectMap);
+									log.info("for the key : " + fieldName + " We add the map: " + objectMap);
 									ReflectionUtils.setField(currentField, modelInstance, objectMap);
 								}
 							} else {
@@ -218,39 +216,39 @@ public class ExcelServiceImpl implements ExcelServiceInterface {
 						}
 					}
 				}
-				this.logger.info("We save " + modelInstance);
+				log.info("We save " + modelInstance);
 				service.save(modelInstance);
 			}
 		} catch (EncryptedDocumentException | InvalidFormatException | IOException | InstantiationException | IllegalAccessException e) {
-			this.logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
 			throw new ExcelException(e.getMessage(), e);
 		}
 	}
 
-	private <T> XSSFWorkbook getWorkWook(Class<T> entityType) throws IOException {
+	private <T> XSSFWorkbook getWorkWook(String entityName) throws IOException {
 		ByteArrayOutputStream arrayOutputStream = new ByteArrayOutputStream();
 		try {
 			// we create the File
 			// we can also use template in resource path
 			XSSFWorkbook wb = new XSSFWorkbook();
-			this.checkWorkBookIntegrity(wb, entityType);
+			this.checkWorkBookIntegrity(wb, entityName);
 			wb.write(arrayOutputStream);
 		} finally {
 			arrayOutputStream.close();
 		}
 		InputStream inputStream = new ByteArrayInputStream(arrayOutputStream.toByteArray());
 		XSSFWorkbook wb = new XSSFWorkbook(inputStream);
-		checkWorkBookIntegrity(wb, entityType);
+		checkWorkBookIntegrity(wb, entityName);
 		return wb;
 	}
 
-	private <T> void checkWorkBookIntegrity(XSSFWorkbook wb, Class<T> entityType) {
+	private <T> void checkWorkBookIntegrity(XSSFWorkbook wb, String entityName) {
 		// we check if sheets for this model exist, if not we create it
-		if (wb.getSheetIndex(entityType.getSimpleName()) == -1) {
-			wb.createSheet(entityType.getSimpleName());
+		if (wb.getSheetIndex(entityName) == -1) {
+			wb.createSheet(entityName);
 		}
 		// we check if each column is correct according to the class parameter
-		XSSFSheet entitySheet = wb.getSheet(entityType.getSimpleName());
+		XSSFSheet entitySheet = wb.getSheet(entityName);
 		XSSFRow firstRow = entitySheet.getRow(0);
 		// if row doesn't exist we create it
 		if (firstRow == null) {
@@ -278,111 +276,24 @@ public class ExcelServiceImpl implements ExcelServiceInterface {
 		// entitySheet.enableLocking();
 	}
 
-	private <T> void sortFieldObject() throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException, SecurityException {
-		List<FieldWithObject> listToSOrt = new ArrayList<FieldWithObject>(this.fieldToReworkObject);
-		for (FieldWithObject fieldWithObject : listToSOrt) {
-			ReflectionUtils.makeAccessible(fieldWithObject.field);
-			ExcelIgnoreAnnotation excelIgnore = fieldWithObject.field.getAnnotation(ExcelIgnoreAnnotation.class);
-			if (excelIgnore != null && excelIgnore.value()) {
-				this.logger.info("We ignore the field: " + fieldWithObject.field.getName());
-			} else {
-				if (!fieldWithObject.field.getType().isAssignableFrom(Boolean.class) && !fieldWithObject.field.getType().isAssignableFrom(Date.class)
-						&& !fieldWithObject.field.getType().isAssignableFrom(Double.class) && !fieldWithObject.field.getType().isAssignableFrom(String.class)
-						&& !fieldWithObject.field.getType().isAssignableFrom(ZonedDateTime.class) && !fieldWithObject.field.getType().isAssignableFrom(Long.class)
-						&& !fieldWithObject.field.getType().isAssignableFrom(Integer.class)) {
-					if (fieldWithObject.field.getType().isAssignableFrom(List.class)) {
-						ParameterizedType stringListType = (ParameterizedType) fieldWithObject.field.getGenericType();
-						Class<?> stringListClass = (Class<?>) stringListType.getActualTypeArguments()[0];
-						List<?> objectList = (List<?>) fieldWithObject.field.get(fieldWithObject.object);
-						int index = 1;
-						for (Object object : objectList) {
-							Boolean alreadyIndexed = false;
-							for (Field field : stringListClass.getDeclaredFields()) {
-								ReflectionUtils.makeAccessible(field);
-								if (!field.getType().isAssignableFrom(Boolean.class) && !field.getType().isAssignableFrom(Date.class) && !field.getType().isAssignableFrom(Double.class)
-										&& !field.getType().isAssignableFrom(String.class) && !field.getType().isAssignableFrom(ZonedDateTime.class) && !field.getType().isAssignableFrom(Long.class)
-										&& !field.getType().isAssignableFrom(Integer.class)) {
-									this.fieldToReworkObject.add(new FieldWithObject(object, field, createFieldName(field, index)));
-								} else {
-									String fieldName = createFieldName(field, index);
-									if (fieldWithObject.fieldName != null) {
-										fieldName = fieldWithObject.fieldName + "." + createFieldName(field, index);
-									}
-									this.fieldOkObject.add(new FieldWithObject(object, field, fieldName));
-									alreadyIndexed = true;
-								}
-							}
-							if (alreadyIndexed) {
-								index++;
-							}
-						}
-					}
-					if (fieldWithObject.field.getType().isAssignableFrom(Map.class)) {
-						ParameterizedType stringListType = (ParameterizedType) fieldWithObject.field.getGenericType();
-						Class<?> stringListClass = (Class<?>) stringListType.getActualTypeArguments()[0];
-						if (stringListClass.isAssignableFrom(String.class)) {
-							@SuppressWarnings("unchecked")
-							Map<String, ?> mapList = (Map<String, ?>) fieldWithObject.field.get(fieldWithObject.object);
-							for (String key : mapList.keySet()) {
-								this.fieldOkObject.add(new FieldWithObject(mapList.get(key), null, key));
-							}
-						}
-					}
-					if (fieldWithObject.field.getGenericType().toString().contains("dragonFly")) {
-						// we need go further for this object
-						if (!fieldWithObject.field.getGenericType().toString().contains("customizeField")) {
-							Object newObject = fieldWithObject.field.get(fieldWithObject.object);
-							if (newObject != null) {
-								for (Field field : fieldWithObject.field.getType().getDeclaredFields()) {
-									String fieldName = createFieldName(field, null);
-									if (fieldWithObject.fieldName != null) {
-										fieldName = fieldWithObject.fieldName + "." + createFieldName(field, null);
-									}
-									this.fieldToReworkObject.add(new FieldWithObject(newObject, field, fieldName));
-								}
-							}
-						}
-					}
-				} else {
-					// object ok to display
-					this.fieldOkObject.add(new FieldWithObject(fieldWithObject.object, fieldWithObject.field, this.createFieldName(fieldWithObject.field, null)));
-				}
-			}
-			this.fieldToReworkObject.remove(fieldWithObject);
-		}
-	}
-
-	private <T> void writeRow(Row rowToAddEntity, XSSFSheet entitySheet) throws IllegalArgumentException, IllegalAccessException {
-		int index = 0;
-		for (FieldWithObject fieldWithObject : this.fieldOkObject) {
-			Cell cell = rowToAddEntity.createCell(index);
-			if (cell == null) {
-				cell = rowToAddEntity.createCell(index);
-			}
+	private <T> void writeRow(T object, int numberOfColumn, Row rowToAddEntity, XSSFSheet entitySheet) throws IllegalArgumentException, IllegalAccessException, JsonProcessingException {
+		ObjectMapper mapper = new ObjectMapper();
+		Map<String, Object> objectMap = JsonFlattener.flattenAsMap(mapper.writeValueAsString(object));
+		for (int i = 0; i < numberOfColumn; i++) {
+			Cell cell = rowToAddEntity.createCell(i);
 			Row firstRow = entitySheet.getRow(0);
-			Cell cellTop = firstRow.getCell(index);
-			if (cellTop == null) {
-				cellTop = firstRow.createCell(index);
-				cellTop.setCellValue(fieldWithObject.object.getClass().getSimpleName() + "." + fieldWithObject.fieldName);
-			}
-			if (cellTop.getStringCellValue().equals(fieldWithObject.object.getClass().getSimpleName() + "." + fieldWithObject.fieldName)) {
-				fillFieldWithObject(fieldWithObject.field, fieldWithObject.object, cell);
+			Cell cellTop = firstRow.getCell(i);
+			Object value = objectMap.get(cellTop.getStringCellValue());
+			if (value != null) {
+				fillFieldWithObject(value, cell);
 			} else {
-				cell.setCellValue("");
+				fillFieldWithObject("", cell);
 			}
-			index++;
 		}
 	}
 
-	private void fillFieldWithObject(Field field, Object object, Cell cell) throws IllegalArgumentException, IllegalAccessException {
-		this.logger.info("Object " + object);
-		this.logger.info("field " + field);
-		Object value = object;
-		cell.setCellStyle(this.cellStyle);
-		if (field != null) {
-			ReflectionUtils.makeAccessible(field);
-			value = field.get(object);
-		}
+	private void fillFieldWithObject(Object value, Cell cell) throws IllegalArgumentException, IllegalAccessException {
+		log.info("Object " + value);
 		if (value instanceof Boolean) {
 			cell.setCellValue((Boolean) value);
 		}
@@ -414,37 +325,36 @@ public class ExcelServiceImpl implements ExcelServiceInterface {
 		}
 	}
 
-	private <T> InputStream commitChange(XSSFWorkbook wb, Class<T> entityType) throws IOException {
+	private <T> InputStream commitChange(XSSFWorkbook wb, String entityName) throws IOException {
 		ByteArrayOutputStream arrayOutputStream = new ByteArrayOutputStream();
 		try {
-			checkWorkBookIntegrity(wb, entityType);
+			checkWorkBookIntegrity(wb, entityName);
 			wb.write(arrayOutputStream);
 		} finally {
 			arrayOutputStream.close();
 		}
 		return new ByteArrayInputStream(arrayOutputStream.toByteArray());
 	}
-
-	private String createFieldName(Field field, Integer index) {
-		if (index == null) {
-			// return field.getDeclaringClass().getSimpleName() + "." +
-			// field.getName();
-			return field.getName();
-		}
-		// return field.getDeclaringClass().getSimpleName() + "." +
-		// field.getName() + index;
-		return field.getName() + index;
-	}
-
-	public class FieldWithObject {
-		public Object object;
-		public Field field;
-		public String fieldName;
-
-		public FieldWithObject(Object object, Field field, String fieldName) {
-			this.object = object;
-			this.field = field;
-			this.fieldName = fieldName;
-		}
-	}
+	// private String createFieldName(Field field, Integer index) {
+	// if (index == null) {
+	// // return field.getDeclaringClass().getSimpleName() + "." +
+	// // field.getName();
+	// return field.getName() ;
+	// }
+	// // return field.getDeclaringClass().getSimpleName() + "." +
+	// // field.getName() + index;
+	// return field.getName() + index;
+	// }
+	//
+	// public class FieldWithObject {
+	// public Object object;
+	// public Field field;
+	// public String fieldName;
+	//
+	// public FieldWithObject(Object object, Field field, String fieldName) {
+	// this.object = object;
+	// this.field = field;
+	// this.fieldName = fieldName;
+	// }
+	// }
 }

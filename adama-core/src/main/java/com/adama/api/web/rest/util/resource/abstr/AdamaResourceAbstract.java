@@ -99,13 +99,13 @@ public abstract class AdamaResourceAbstract<D extends DeleteEntityAbstract, T ex
 	}
 
 	protected ResponseEntity<?> wrapPage(HttpServletRequest request, Page<D> page, List<T> overridenDtoList) throws URISyntaxException, ExcelException {
-		if (headerIsExcel(request)) {
-			return getExcelResponse(generateExcel(page.getContent()));
-		}
-		HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(page, "" + request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE), Optional.empty());
 		if (overridenDtoList == null) {
 			overridenDtoList = mapper.entitiesToDtos(page.getContent());
 		}
+		if (headerIsExcel(request)) {
+			return getExcelResponse(generateExcel(overridenDtoList));
+		}
+		HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(page, "" + request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE), Optional.empty());
 		return new ResponseEntity<>(overridenDtoList, headers, HttpStatus.OK);
 	}
 
@@ -156,8 +156,8 @@ public abstract class AdamaResourceAbstract<D extends DeleteEntityAbstract, T ex
 	 * @param entitities
 	 *            list entities to put in excel
 	 */
-	protected InputStream generateExcel(List<D> entitities) throws ExcelException {
-		return excelService.createExcel(entitities, persistentClass);
+	protected InputStream generateExcel(List<T> entitities) throws ExcelException {
+		return excelService.createExcel(entitities, persistentClass.getSimpleName());
 	}
 
 	public Boolean headerIsExcel(HttpServletRequest request) {
