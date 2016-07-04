@@ -11,7 +11,6 @@ import java.util.Optional;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
-import javax.validation.Valid;
 
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Page;
@@ -22,11 +21,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.HandlerMapping;
 
 import com.adama.api.domain.util.domain.abst.delete.DeleteEntityAbstract;
@@ -63,7 +57,7 @@ public abstract class AdamaResourceAbstract<D extends DeleteEntityAbstract, T ex
 	}
 
 	@Override
-	public ResponseEntity<T> createEntity(@Valid @RequestBody T entity, HttpServletRequest request) throws URISyntaxException {
+	public ResponseEntity<T> createEntity(T entity, HttpServletRequest request) throws URISyntaxException {
 		log.info("REST request to save {} : {}", service, entity);
 		if (entity.getId() != null) {
 			return ResponseEntity.badRequest().headers(HeaderUtil.createFailureAlert(entityName, "A new " + entityName + " cannot already have an ID")).body(null);
@@ -75,7 +69,7 @@ public abstract class AdamaResourceAbstract<D extends DeleteEntityAbstract, T ex
 	}
 
 	@Override
-	public ResponseEntity<T> updateEntity(@Valid @RequestBody T entity, HttpServletRequest request) throws URISyntaxException {
+	public ResponseEntity<T> updateEntity(T entity, HttpServletRequest request) throws URISyntaxException {
 		log.debug("REST request to update {} : {}", entityName, entity);
 		if (entity.getId() == null) {
 			return createEntity(entity, request);
@@ -88,50 +82,51 @@ public abstract class AdamaResourceAbstract<D extends DeleteEntityAbstract, T ex
 		return ResponseEntity.ok().headers(HeaderUtil.createEntityUpdateAlert(entityName, entity.getId().toString())).body(result);
 	}
 
-	@Override
-	@Transactional(readOnly = true)
-	public ResponseEntity<?> getAllEntities(@RequestParam(required = false) String search, @RequestParam(required = false) Boolean all, Pageable pageable, HttpServletRequest request)
-			throws URISyntaxException, ExcelException {
-		log.debug("REST request to get a page of {}", pageable);
+	protected Page<D> getAllEntitiesPage(String search, Boolean all, Pageable pageable, HttpServletRequest request) {
+		Page<D> page;
 		if (search != null) {
-			Page<D> page = service.searchAll(search, pageable);
-			if (headerIsExcel(request)) {
-				return getExcelResponse(generateExcel(page.getContent()));
-			}
-			HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(page, "" + request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE), Optional.ofNullable(search));
-			return new ResponseEntity<>(mapper.entitiesToDtos(page.getContent()), headers, HttpStatus.OK);
-		}
-		if (all != null && all) {
+			page = service.searchAll(search, pageable);
+		} else if (all != null && all) {
 			int count = service.count().intValue();
 			if (count == 0) {
 				count = 1;
 			}
-			Page<D> page = service.findAll(new PageRequest(0, count));
-			if (headerIsExcel(request)) {
-				return getExcelResponse(generateExcel(page.getContent()));
-			}
-			HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(page, "" + request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE), Optional.ofNullable(search));
-			return new ResponseEntity<>(mapper.entitiesToDtos(page.getContent()), headers, HttpStatus.OK);
+			page = service.findAll(new PageRequest(0, count));
+		} else {
+			page = service.findAll(pageable);
 		}
-		Page<D> page = service.findAll(pageable);
+		return page;
+	}
+
+	protected ResponseEntity<?> wrapPage(HttpServletRequest request, Page<D> page, List<T> overridenDtoList) throws URISyntaxException, ExcelException {
 		if (headerIsExcel(request)) {
 			return getExcelResponse(generateExcel(page.getContent()));
 		}
 		HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(page, "" + request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE), Optional.empty());
-		return new ResponseEntity<>(mapper.entitiesToDtos(page.getContent()), headers, HttpStatus.OK);
+		if (overridenDtoList == null) {
+			overridenDtoList = mapper.entitiesToDtos(page.getContent());
+		}
+		return new ResponseEntity<>(overridenDtoList, headers, HttpStatus.OK);
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public ResponseEntity<T> getEntity(@PathVariable String id) {
+	public ResponseEntity<?> getAllEntities(String search, Boolean all, Pageable pageable, HttpServletRequest request) throws URISyntaxException, ExcelException {
+		log.debug("REST request to get a page of {}", pageable);
+		Page<D> page = getAllEntitiesPage(search, all, pageable, request);
+		return wrapPage(request, page, null);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public ResponseEntity<T> getEntity(String id) {
 		log.debug("REST request to get {} : {}", entityName, id);
 		T entityDto = mapper.entityToDto(service.findOne(id));
 		return Optional.ofNullable(entityDto).map(result -> new ResponseEntity<>(result, HttpStatus.OK)).orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
 	}
 
 	@Override
-	@RequestMapping(value = "/{id}", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Void> deleteEntity(@PathVariable String id) {
+	public ResponseEntity<Void> deleteEntity(String id) {
 		log.debug("REST request to delete {} : {}", entityName, id);
 		service.delete(id);
 		return ResponseEntity.ok().headers(HeaderUtil.createEntityDeletionAlert(entityName, id.toString())).build();

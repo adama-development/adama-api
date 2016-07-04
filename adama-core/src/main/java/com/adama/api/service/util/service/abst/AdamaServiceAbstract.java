@@ -50,7 +50,7 @@ public abstract class AdamaServiceAbstract<D extends DeleteEntityAbstract, R ext
 
 	@Override
 	public List<D> findMany(List<String> idList) {
-		// FIXME query at lower level to avoid multiple simple query
+		// TODO query at lower level to avoid multiple simple query
 		List<D> result = new ArrayList<>();
 		for (String id : idList) {
 			D entity = findOne(id);
