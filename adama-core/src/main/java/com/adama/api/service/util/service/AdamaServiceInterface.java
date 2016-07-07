@@ -46,13 +46,13 @@ public interface AdamaServiceInterface<D extends DeleteEntityAbstract> {
 	D findOne(String id);
 
 	/**
-	 * Get the "id" adamaEntity.
+	 * Get a list of "id" adamaEntity.
 	 * 
 	 * @param id
 	 *            the id of the entity
-	 * @return the entity
+	 * @return the entity list
 	 */
-	List<D> findMany(List<String> idList);
+	Iterable<D> findAll(List<String> idList);
 
 	/**
 	 * Delete the "id" adamaEntity.
