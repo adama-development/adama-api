@@ -5,26 +5,36 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.lang.reflect.Field;
+import java.math.BigDecimal;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.apache.poi.EncryptedDocumentException;
+import org.apache.poi.hssf.util.AreaReference;
+import org.apache.poi.hssf.util.CellReference;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.BuiltinFormats;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.RichTextString;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
-import org.apache.poi.ss.util.AreaReference;
-import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -39,26 +49,30 @@ import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTTable;
 import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTTableColumn;
 import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTTableColumns;
 import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTTableStyleInfo;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.util.ReflectionUtils;
 
 import com.adama.api.domain.util.domain.abst.delete.DeleteEntityAbstract;
-import com.adama.api.repository.util.repository.AdamaMongoRepository;
 import com.adama.api.service.excel.ExcelServiceInterface;
 import com.adama.api.service.excel.exception.ExcelException;
 import com.adama.api.service.excel.util.FormattingHtml;
-import com.adama.api.service.util.service.AdamaServiceInterface;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.wnameless.json.flattener.JsonFlattener;
+import com.github.wnameless.json.unflattener.JsonUnflattener;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
 public class ExcelServiceImpl implements ExcelServiceInterface {
+
 	private CellStyle dateCellStyle;
 	private CellStyle cellStyle;
+
+	@Autowired
+	private ObjectMapper mapper;
 
 	@Override
 	public <T> InputStream createExcel(List<T> objectList, String entityName) throws ExcelException {
@@ -76,19 +90,18 @@ public class ExcelServiceImpl implements ExcelServiceInterface {
 				this.cellStyle.setVerticalAlignment(CellStyle.VERTICAL_CENTER);
 				// create a list of map for each object, each object could have
 				// a size of fieldName different
-				ObjectMapper mapper = new ObjectMapper();
 				List<Map<String, Object>> listMap = objectList.parallelStream().map(object -> {
 					try {
-						return JsonFlattener.flattenAsMap(mapper.writeValueAsString(object));
+						return new JsonFlattener(mapper.writeValueAsString(object)).flattenAsMap();
 					} catch (JsonProcessingException e) {
 						log.error(e.getMessage(), e);
 						throw new UncheckedIOException(e.getMessage(), e);
 					}
 				}).collect(Collectors.toList());
-				// we get a KeySet with all the elements of each keySet in
-				// alphabetical order
-				List<String> headerList = listMap.parallelStream().flatMap(map -> map.keySet().stream()).distinct().sorted((e1, e2) -> e1.compareToIgnoreCase(e2)).collect(Collectors.toList());
-				log.info("Header is : {}", headerList);
+				// we get a KeySet with all the elements of each keySet
+				List<String> headerList = listMap.parallelStream().flatMap(map -> map.keySet().stream())
+						.filter(distinctByKey(String::toLowerCase)).sorted(new IdFirstComparator())
+						.collect(Collectors.toList());
 				// we create the first Row with the keyName
 				Row firstRow = entitySheet.getRow(0);
 				IntStream.range(0, headerList.size()).forEach(i -> {
@@ -103,6 +116,7 @@ public class ExcelServiceImpl implements ExcelServiceInterface {
 					writeRow(object, headerList.size(), rowToAddEntity, entitySheet);
 					currentRowIndex++;
 				}
+
 				/* Create Table into Existing Sheet */
 				XSSFTable my_table = entitySheet.createTable();
 				/* get CTTable object */
@@ -111,20 +125,23 @@ public class ExcelServiceImpl implements ExcelServiceInterface {
 				CTTableStyleInfo table_style = cttable.addNewTableStyleInfo();
 				table_style.setName("TableStyleMedium9");
 				/* Define Style Options */
-				table_style.setShowColumnStripes(false); // showColumnStripes=0
-				table_style.setShowRowStripes(true); // showRowStripes=1
+				table_style.setShowColumnStripes(false);
+				// showColumnStripes=0
+				table_style.setShowRowStripes(true);
+				// showRowStripes=1
 				/* Define the data range including headers */
-				AreaReference my_data_range = new AreaReference(new CellReference(0, 0), new CellReference(objectList.size(), headerList.size()));
+				AreaReference my_data_range = new AreaReference(new CellReference(0, 0),
+						new CellReference(objectList.size(), headerList.size() - 1));
 				/* Set Range to the Table */
 				cttable.setRef(my_data_range.formatAsString());
 				cttable.setDisplayName(entityName);
 				cttable.setName(entityName.toUpperCase());
 				cttable.setId(1L);
 				CTTableColumns columns = cttable.addNewTableColumns();
-				columns.setCount(headerList.size() + 1); // define number of
-															// columns
+				columns.setCount(headerList.size());
+				// define number of columns
 				CTAutoFilter autofilter = cttable.addNewAutoFilter();
-				for (int i = 0; i < headerList.size() + 1; i++) {
+				for (int i = 0; i < headerList.size(); i++) {
 					CTTableColumn column = columns.addNewTableColumn();
 					column.setName("Column" + i);
 					column.setId(i + 1);
@@ -132,10 +149,10 @@ public class ExcelServiceImpl implements ExcelServiceInterface {
 					filter.setColId(i + 1);
 					filter.setShowButton(true);
 				}
-				for (int i = 0; i <= headerList.size(); i++) {
+				for (int i = 0; i < headerList.size(); i++) {
 					entitySheet.autoSizeColumn(i);
 					// Include width of drop down button
-					if (entitySheet.getColumnWidth(i) < 65000) {
+					if (entitySheet.getColumnWidth(i) < 60000) {
 						entitySheet.setColumnWidth(i, entitySheet.getColumnWidth(i) + 900);
 					}
 				}
@@ -148,21 +165,24 @@ public class ExcelServiceImpl implements ExcelServiceInterface {
 	}
 
 	@Override
-	public <T extends DeleteEntityAbstract, R extends AdamaMongoRepository<T, String>> void readExcel(InputStream inputStream, Class<T> entityType, AdamaServiceInterface<T> service,
-			List<String> mapStringNameList) throws ExcelException {
+	public <T> List<T> readExcel(InputStream inputStream, Class<T> entityType, String entityName)
+			throws ExcelException {
 		Workbook workbook;
+		List<T> entityList = new ArrayList<>();
 		try {
 			workbook = WorkbookFactory.create(inputStream);
-			Sheet entitySheet = workbook.getSheet(entityType.getSimpleName());
+			Sheet entitySheet = workbook.getSheet(entityName);
 			if (entitySheet == null) {
-				throw new ExcelException("Cannot find sheet with name: " + entityType.getSimpleName());
+				throw new ExcelException("Cannot find sheet with name: " + entityName);
 			}
 			Row firstRow = entitySheet.getRow(0);
 			// find column Id
 			Integer columnIdIndex = null;
 			for (int cellIter = 0; cellIter <= firstRow.getLastCellNum(); cellIter++) {
-				if (firstRow.getCell(cellIter) != null && firstRow.getCell(cellIter).getCellType() == Cell.CELL_TYPE_STRING
-						&& firstRow.getCell(cellIter).getStringCellValue().equalsIgnoreCase(entityType.getSimpleName() + "." + DeleteEntityAbstract.ID_FIELD_NAME)) {
+				if (firstRow.getCell(cellIter) != null
+						&& firstRow.getCell(cellIter).getCellType() == Cell.CELL_TYPE_STRING
+						&& firstRow.getCell(cellIter).getStringCellValue()
+								.equalsIgnoreCase(DeleteEntityAbstract.ID_FIELD_NAME)) {
 					columnIdIndex = cellIter;
 					break;
 				}
@@ -172,54 +192,49 @@ public class ExcelServiceImpl implements ExcelServiceInterface {
 			}
 			for (int rowIndex = 1; rowIndex <= entitySheet.getLastRowNum(); rowIndex++) {
 				Row row = entitySheet.getRow(rowIndex);
-				// get current object instance
-				// if have id we update, if no id we create the object
-				String id = null;
-				if (row.getCell(columnIdIndex) != null) {
-					id = row.getCell(columnIdIndex).getStringCellValue();
-				}
-				log.info("id " + id);
-				T modelInstance = null;
-				// Boolean needUpate;
-				if (id != null && !id.trim().isEmpty()) {
-					modelInstance = service.findOne(id);
-				} else {
-					modelInstance = entityType.newInstance();
-				}
+				// we create a new flatjson from the excel
+				ObjectNode flatJson = mapper.createObjectNode();
+				// we fill the json object with value column by column
 				for (int cellIndex = 0; cellIndex < row.getLastCellNum(); cellIndex++) {
-					if (cellIndex != columnIdIndex) {
-						Cell cell = row.getCell(cellIndex);
-						String fieldName = null;
-						if (firstRow.getCell(cellIndex) != null && firstRow.getCell(cellIndex).getCellType() == Cell.CELL_TYPE_STRING) {
-							fieldName = firstRow.getCell(cellIndex).getStringCellValue().replace(entityType.getSimpleName() + ".", "");
+					Cell cell = row.getCell(cellIndex);
+					// get the column name
+					String fieldName = firstRow.getCell(cellIndex).getStringCellValue();
+					if (fieldName == null) {
+						throw new ExcelException("Column " + cellIndex + " cannot be empty or not a string");
+					}
+					if (cell != null) {
+						if (cell.getCellType() == Cell.CELL_TYPE_BOOLEAN) {
+							flatJson.put(fieldName, cell.getBooleanCellValue());
 						}
-						if (fieldName == null) {
-							throw new ExcelException("Column " + cellIndex + " cannot be empty or not a string");
-						}
-						if (cell != null && cell.getCellType() == Cell.CELL_TYPE_STRING) {
-							if (fieldName.contains("String")) {
-								fieldName = fieldName.replace("String.", "");
-								for (String mapName : mapStringNameList) {
-									Field currentField = ReflectionUtils.findField(entityType, mapName);
-									@SuppressWarnings("unchecked")
-									Map<String, String> objectMap = (Map<String, String>) ReflectionUtils.getField(currentField, modelInstance);
-									ReflectionUtils.makeAccessible(currentField);
-									objectMap.put(fieldName, cell.getStringCellValue());
-									log.info("for the key : " + fieldName + " We add the map: " + objectMap);
-									ReflectionUtils.setField(currentField, modelInstance, objectMap);
+						if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
+							try {
+								if (DateUtil.isCellDateFormatted(cell)) {
+									// if it's a date
+									Date myDate = cell.getDateCellValue();
+									ZonedDateTime myZonedDateTime = ZonedDateTime.ofInstant(myDate.toInstant(),
+											ZoneId.of("Z"));
+
+									flatJson.put(fieldName, myZonedDateTime
+											.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ")));
+								} else {
+									flatJson.put(fieldName, cell.getNumericCellValue());
 								}
-							} else {
-								Field currentField = ReflectionUtils.findField(entityType, fieldName);
-								ReflectionUtils.makeAccessible(currentField);
-								ReflectionUtils.setField(currentField, modelInstance, cell.getStringCellValue());
+							} catch (NumberFormatException nfe) {
+								// if not a date
+								flatJson.put(fieldName, cell.getNumericCellValue());
 							}
+						}
+						if (cell.getCellType() == Cell.CELL_TYPE_STRING) {
+							flatJson.put(fieldName, cell.getStringCellValue());
 						}
 					}
 				}
-				log.info("We save " + modelInstance);
-				service.save(modelInstance);
+				String jsonUnflatten = JsonUnflattener.unflatten(flatJson.toString());
+				T object = mapper.readValue(jsonUnflatten, entityType);
+				entityList.add(object);
 			}
-		} catch (EncryptedDocumentException | InvalidFormatException | IOException | InstantiationException | IllegalAccessException e) {
+			return entityList;
+		} catch (IOException | EncryptedDocumentException | InvalidFormatException e) {
 			log.error(e.getMessage(), e);
 			throw new ExcelException(e.getMessage(), e);
 		}
@@ -254,31 +269,11 @@ public class ExcelServiceImpl implements ExcelServiceInterface {
 		if (firstRow == null) {
 			firstRow = entitySheet.createRow(0);
 		}
-		// we lock all the id cell
-		// CellStyle unlockedCellStyle = wb.createCellStyle();
-		// unlockedCellStyle.setLocked(false);
-		// for (int i = 0; i <= entitySheet.getLastRowNum(); i++) {
-		// XSSFRow row = entitySheet.getRow(i);
-		// for (int j = 0; j <= row.getLastCellNum(); j++) {
-		// if (i != 0 && (firstRow.getCell(j) != null &&
-		// !firstRow.getCell(j).getStringCellValue().equals(Model.ID_FIELDNAME)))
-		// {
-		// XSSFCell cell = row.getCell(j);
-		// if (row.getCell(j) != null) {
-		// cell.setCellStyle(unlockedCellStyle);
-		// }
-		// }
-		// }
-		// }
-		// entitySheet.lockAutoFilter(false);
-		// entitySheet.lockSort(false);
-		// entitySheet.lockInsertRows(false);
-		// entitySheet.enableLocking();
 	}
 
-	private <T> void writeRow(T object, int numberOfColumn, Row rowToAddEntity, XSSFSheet entitySheet) throws IllegalArgumentException, IllegalAccessException, JsonProcessingException {
-		ObjectMapper mapper = new ObjectMapper();
-		Map<String, Object> objectMap = JsonFlattener.flattenAsMap(mapper.writeValueAsString(object));
+	private <T> void writeRow(T object, int numberOfColumn, Row rowToAddEntity, XSSFSheet entitySheet)
+			throws IllegalArgumentException, IllegalAccessException, JsonProcessingException {
+		Map<String, Object> objectMap = new JsonFlattener(mapper.writeValueAsString(object)).flattenAsMap();
 		for (int i = 0; i < numberOfColumn; i++) {
 			Cell cell = rowToAddEntity.createCell(i);
 			Row firstRow = entitySheet.getRow(0);
@@ -286,14 +281,13 @@ public class ExcelServiceImpl implements ExcelServiceInterface {
 			Object value = objectMap.get(cellTop.getStringCellValue());
 			if (value != null) {
 				fillFieldWithObject(value, cell);
-			} else {
-				fillFieldWithObject("", cell);
 			}
 		}
 	}
 
 	private void fillFieldWithObject(Object value, Cell cell) throws IllegalArgumentException, IllegalAccessException {
-		log.info("Object " + value);
+		// log.info("Object " + value.getClass() + " -> " + value);
+		cell.setCellValue("BUG DURING EXTRACT");
 		if (value instanceof Boolean) {
 			cell.setCellValue((Boolean) value);
 		}
@@ -311,17 +305,27 @@ public class ExcelServiceImpl implements ExcelServiceInterface {
 		if (value instanceof Long) {
 			cell.setCellValue((Long) value);
 		}
-		if (value instanceof Integer) {
-			cell.setCellValue((Integer) value);
+		if (value instanceof Long) {
+			cell.setCellValue((Long) value);
+		}
+		if (value instanceof BigDecimal) {
+			cell.setCellValue(((BigDecimal) value).longValue());
 		}
 		if (value instanceof String) {
-			String stringValue = (String) value;
-			Document doc = Jsoup.parse(stringValue);
-			FormattingHtml formatter = new FormattingHtml();
-			NodeTraversor traversor = new NodeTraversor(formatter);
-			traversor.traverse(doc);
-			RichTextString richTextString = new XSSFRichTextString(formatter.toString());
-			cell.setCellValue(richTextString);
+			try {
+				ZonedDateTime myDate = ZonedDateTime.parse((String) value,
+						DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ"));
+				cell.setCellValue(Date.from(myDate.toInstant()));
+				cell.setCellStyle(this.dateCellStyle);
+			} catch (DateTimeParseException dtpe) {
+				String stringValue = (String) value;
+				Document doc = Jsoup.parse(stringValue);
+				FormattingHtml formatter = new FormattingHtml();
+				NodeTraversor traversor = new NodeTraversor(formatter);
+				traversor.traverse(doc);
+				RichTextString richTextString = new XSSFRichTextString(formatter.toString());
+				cell.setCellValue(richTextString);
+			}
 		}
 	}
 
@@ -335,26 +339,25 @@ public class ExcelServiceImpl implements ExcelServiceInterface {
 		}
 		return new ByteArrayInputStream(arrayOutputStream.toByteArray());
 	}
-	// private String createFieldName(Field field, Integer index) {
-	// if (index == null) {
-	// // return field.getDeclaringClass().getSimpleName() + "." +
-	// // field.getName();
-	// return field.getName() ;
-	// }
-	// // return field.getDeclaringClass().getSimpleName() + "." +
-	// // field.getName() + index;
-	// return field.getName() + index;
-	// }
-	//
-	// public class FieldWithObject {
-	// public Object object;
-	// public Field field;
-	// public String fieldName;
-	//
-	// public FieldWithObject(Object object, Field field, String fieldName) {
-	// this.object = object;
-	// this.field = field;
-	// this.fieldName = fieldName;
-	// }
-	// }
+
+	public static <T> Predicate<T> distinctByKey(Function<? super T, Object> keyExtractor) {
+		Map<Object, String> seen = new ConcurrentHashMap<>();
+		return t -> seen.put(keyExtractor.apply(t), "") == null;
+	}
+
+}
+
+class IdFirstComparator implements Comparator<String> {
+	private static List<String> important = Arrays.asList(DeleteEntityAbstract.ID_FIELD_NAME);
+
+	@Override
+	public int compare(String o1, String o2) {
+		if (important.contains(o1)) {
+			return -1;
+		}
+		if (important.contains(o2)) {
+			return 1;
+		}
+		return o1.compareToIgnoreCase(o2);
+	}
 }

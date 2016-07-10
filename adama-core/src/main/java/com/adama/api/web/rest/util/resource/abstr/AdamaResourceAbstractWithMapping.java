@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.adama.api.domain.util.domain.abst.delete.DeleteEntityAbstract;
 import com.adama.api.service.excel.exception.ExcelException;
@@ -24,8 +26,8 @@ import com.adama.api.web.rest.util.mapper.DTOMapperInterface;
 
 public abstract class AdamaResourceAbstractWithMapping<D extends DeleteEntityAbstract, T extends AdamaDtoAbstract, S extends AdamaServiceInterface<D>, M extends DTOMapperInterface<D, T>> extends
 		AdamaResourceAbstract<D, T, S, M> {
-	public AdamaResourceAbstractWithMapping(Class<D> entity) {
-		super(entity);
+	public AdamaResourceAbstractWithMapping(Class<D> entity, Class<T> dto) {
+		super(entity,dto);
 	}
 
 	@Override
@@ -57,6 +59,12 @@ public abstract class AdamaResourceAbstractWithMapping<D extends DeleteEntityAbs
 	@RequestMapping(value = "/{id}", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Void> deleteEntity(@PathVariable String id) {
 		return super.deleteEntity(id);
+	}
+	
+	@Override
+	@RequestMapping(value = "/excel",method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<?> updateEntityExcel(@RequestPart(required = true) MultipartFile file) throws Exception {
+		return super.updateEntityExcel(file);
 	}
 
 	public abstract void init();

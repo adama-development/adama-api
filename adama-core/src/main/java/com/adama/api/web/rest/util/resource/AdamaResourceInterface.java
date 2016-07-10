@@ -6,6 +6,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.adama.api.domain.util.domain.abst.delete.DeleteEntityAbstract;
 import com.adama.api.service.excel.exception.ExcelException;
@@ -29,7 +30,8 @@ public interface AdamaResourceInterface<T extends DeleteEntityAbstract, D extend
 	 *             if the Location URI syntax is incorrect
 	 */
 	@ApiOperation(value = "Create a new Entity")
-	@ApiResponses(value = { @ApiResponse(code = 201, message = "Entity created return in body"), @ApiResponse(code = 400, message = "Entity has already an ID, or have duplicate") })
+	@ApiResponses(value = { @ApiResponse(code = 201, message = "Entity created return in body"),
+			@ApiResponse(code = 400, message = "Entity has already an ID, or have duplicate") })
 	ResponseEntity<D> createEntity(D dto, HttpServletRequest request) throws URISyntaxException;
 
 	/**
@@ -46,7 +48,8 @@ public interface AdamaResourceInterface<T extends DeleteEntityAbstract, D extend
 	 *             if the Location URI syntax is incorrect
 	 */
 	@ApiOperation(value = "Updates an existing Entity.")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "Entity updated return in body"), @ApiResponse(code = 400, message = "The Entity is not valid"),
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "Entity updated return in body"),
+			@ApiResponse(code = 400, message = "The Entity is not valid"),
 			@ApiResponse(code = 500, message = " The Entity couldnt be updated") })
 	ResponseEntity<D> updateEntity(D dto, HttpServletRequest request) throws URISyntaxException;
 
@@ -71,7 +74,8 @@ public interface AdamaResourceInterface<T extends DeleteEntityAbstract, D extend
 	 */
 	@ApiOperation(value = "Get all the Entities.")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "The list of Entities return in body") })
-	ResponseEntity<?> getAllEntities(String search, Boolean all, Pageable pageable, HttpServletRequest request) throws URISyntaxException, ExcelException;;
+	ResponseEntity<?> getAllEntities(String search, Boolean all, Pageable pageable, HttpServletRequest request)
+			throws URISyntaxException, ExcelException;;
 
 	/**
 	 * GET /entities/:id : get the "id" Entity.
@@ -82,7 +86,8 @@ public interface AdamaResourceInterface<T extends DeleteEntityAbstract, D extend
 	 *         EntityDTO, or with status 404 (Not Found)
 	 */
 	@ApiOperation(value = "Get the 'id' Entity.")
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "The Entity return in body"), @ApiResponse(code = 404, message = "Entity not found") })
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "The Entity return in body"),
+			@ApiResponse(code = 404, message = "Entity not found") })
 	ResponseEntity<D> getEntity(String id);
 
 	/**
@@ -95,4 +100,22 @@ public interface AdamaResourceInterface<T extends DeleteEntityAbstract, D extend
 	@ApiOperation(value = "Delete the 'id' Entity.")
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "Entity have been deleted") })
 	ResponseEntity<Void> deleteEntity(String id);
+
+	/**
+	 * POST /entities/excel : Updates a list of Entities with excel file.
+	 *
+	 * If the entity exist it's updated, if not it's created. Entity exists if
+	 * id exists.
+	 *
+	 * @param file the excel file with entity to upload
+	 * @return the ResponseEntity with status 200 (OK), with status 500
+	 *         (Internal Server Error)
+	 * @throws URISyntaxException
+	 *             if the Location URI syntax is incorrect
+	 * @throws Exception 
+	 */
+	@ApiOperation(value = "Updates a list of Entities with excel file.")
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "the entities have been updated or created"),
+			@ApiResponse(code = 500, message = " The Entity couldnt be updated") })
+	ResponseEntity<?> updateEntityExcel(MultipartFile file) throws URISyntaxException, Exception;
 }
