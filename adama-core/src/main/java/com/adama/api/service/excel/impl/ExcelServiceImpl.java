@@ -67,10 +67,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 public class ExcelServiceImpl implements ExcelServiceInterface {
-
 	private CellStyle dateCellStyle;
 	private CellStyle cellStyle;
-
 	@Autowired
 	private ObjectMapper mapper;
 
@@ -99,8 +97,7 @@ public class ExcelServiceImpl implements ExcelServiceInterface {
 					}
 				}).collect(Collectors.toList());
 				// we get a KeySet with all the elements of each keySet
-				List<String> headerList = listMap.parallelStream().flatMap(map -> map.keySet().stream())
-						.filter(distinctByKey(String::toLowerCase)).sorted(new IdFirstComparator())
+				List<String> headerList = listMap.parallelStream().flatMap(map -> map.keySet().stream()).filter(distinctByKey(String::toLowerCase)).sorted(new IdFirstComparator())
 						.collect(Collectors.toList());
 				// we create the first Row with the keyName
 				Row firstRow = entitySheet.getRow(0);
@@ -116,7 +113,6 @@ public class ExcelServiceImpl implements ExcelServiceInterface {
 					writeRow(object, headerList.size(), rowToAddEntity, entitySheet);
 					currentRowIndex++;
 				}
-
 				/* Create Table into Existing Sheet */
 				XSSFTable my_table = entitySheet.createTable();
 				/* get CTTable object */
@@ -130,8 +126,7 @@ public class ExcelServiceImpl implements ExcelServiceInterface {
 				table_style.setShowRowStripes(true);
 				// showRowStripes=1
 				/* Define the data range including headers */
-				AreaReference my_data_range = new AreaReference(new CellReference(0, 0),
-						new CellReference(objectList.size(), headerList.size() - 1));
+				AreaReference my_data_range = new AreaReference(new CellReference(0, 0), new CellReference(objectList.size(), headerList.size() - 1));
 				/* Set Range to the Table */
 				cttable.setRef(my_data_range.formatAsString());
 				cttable.setDisplayName(entityName);
@@ -165,8 +160,7 @@ public class ExcelServiceImpl implements ExcelServiceInterface {
 	}
 
 	@Override
-	public <T> List<T> readExcel(InputStream inputStream, Class<T> entityType, String entityName)
-			throws ExcelException {
+	public <T> List<T> readExcel(InputStream inputStream, Class<T> entityType, String entityName) throws ExcelException {
 		Workbook workbook;
 		List<T> entityList = new ArrayList<>();
 		try {
@@ -179,10 +173,8 @@ public class ExcelServiceImpl implements ExcelServiceInterface {
 			// find column Id
 			Integer columnIdIndex = null;
 			for (int cellIter = 0; cellIter <= firstRow.getLastCellNum(); cellIter++) {
-				if (firstRow.getCell(cellIter) != null
-						&& firstRow.getCell(cellIter).getCellType() == Cell.CELL_TYPE_STRING
-						&& firstRow.getCell(cellIter).getStringCellValue()
-								.equalsIgnoreCase(DeleteEntityAbstract.ID_FIELD_NAME)) {
+				if (firstRow.getCell(cellIter) != null && firstRow.getCell(cellIter).getCellType() == Cell.CELL_TYPE_STRING
+						&& firstRow.getCell(cellIter).getStringCellValue().equalsIgnoreCase(DeleteEntityAbstract.ID_FIELD_NAME)) {
 					columnIdIndex = cellIter;
 					break;
 				}
@@ -211,11 +203,8 @@ public class ExcelServiceImpl implements ExcelServiceInterface {
 								if (DateUtil.isCellDateFormatted(cell)) {
 									// if it's a date
 									Date myDate = cell.getDateCellValue();
-									ZonedDateTime myZonedDateTime = ZonedDateTime.ofInstant(myDate.toInstant(),
-											ZoneId.of("Z"));
-
-									flatJson.put(fieldName, myZonedDateTime
-											.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ")));
+									ZonedDateTime myZonedDateTime = ZonedDateTime.ofInstant(myDate.toInstant(), ZoneId.of("Z"));
+									flatJson.put(fieldName, myZonedDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ")));
 								} else {
 									flatJson.put(fieldName, cell.getNumericCellValue());
 								}
@@ -271,8 +260,7 @@ public class ExcelServiceImpl implements ExcelServiceInterface {
 		}
 	}
 
-	private <T> void writeRow(T object, int numberOfColumn, Row rowToAddEntity, XSSFSheet entitySheet)
-			throws IllegalArgumentException, IllegalAccessException, JsonProcessingException {
+	private <T> void writeRow(T object, int numberOfColumn, Row rowToAddEntity, XSSFSheet entitySheet) throws IllegalArgumentException, IllegalAccessException, JsonProcessingException {
 		Map<String, Object> objectMap = new JsonFlattener(mapper.writeValueAsString(object)).flattenAsMap();
 		for (int i = 0; i < numberOfColumn; i++) {
 			Cell cell = rowToAddEntity.createCell(i);
@@ -313,8 +301,7 @@ public class ExcelServiceImpl implements ExcelServiceInterface {
 		}
 		if (value instanceof String) {
 			try {
-				ZonedDateTime myDate = ZonedDateTime.parse((String) value,
-						DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ"));
+				ZonedDateTime myDate = ZonedDateTime.parse((String) value, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ"));
 				cell.setCellValue(Date.from(myDate.toInstant()));
 				cell.setCellStyle(this.dateCellStyle);
 			} catch (DateTimeParseException dtpe) {
@@ -344,7 +331,6 @@ public class ExcelServiceImpl implements ExcelServiceInterface {
 		Map<Object, String> seen = new ConcurrentHashMap<>();
 		return t -> seen.put(keyExtractor.apply(t), "") == null;
 	}
-
 }
 
 class IdFirstComparator implements Comparator<String> {

@@ -14,8 +14,7 @@ public interface ExcelServiceInterface {
 	 * @param name
 	 *            of entity
 	 * @return {@link InputStream}
-	 * @throws {@link
-	 *             ExcelException}:
+	 * @throws {@link ExcelException}:
 	 */
 	public <T> InputStream createExcel(List<T> objectList, String entityName) throws ExcelException;
 
@@ -25,8 +24,7 @@ public interface ExcelServiceInterface {
 	 * @param inputStream
 	 * @param entityType
 	 * @return list of entity
-	 * @throws {@link
-	 *             ExcelException}:
+	 * @throws {@link ExcelException}:
 	 */
 	public <T> List<T> readExcel(InputStream inputStream, Class<T> entityType, String entityName) throws ExcelException;
 }

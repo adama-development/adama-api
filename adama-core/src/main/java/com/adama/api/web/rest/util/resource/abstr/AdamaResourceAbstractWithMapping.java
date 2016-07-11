@@ -27,7 +27,7 @@ import com.adama.api.web.rest.util.mapper.DTOMapperInterface;
 public abstract class AdamaResourceAbstractWithMapping<D extends DeleteEntityAbstract, T extends AdamaDtoAbstract, S extends AdamaServiceInterface<D>, M extends DTOMapperInterface<D, T>> extends
 		AdamaResourceAbstract<D, T, S, M> {
 	public AdamaResourceAbstractWithMapping(Class<D> entity, Class<T> dto) {
-		super(entity,dto);
+		super(entity, dto);
 	}
 
 	@Override
@@ -60,9 +60,9 @@ public abstract class AdamaResourceAbstractWithMapping<D extends DeleteEntityAbs
 	public ResponseEntity<Void> deleteEntity(@PathVariable String id) {
 		return super.deleteEntity(id);
 	}
-	
+
 	@Override
-	@RequestMapping(value = "/excel",method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	@RequestMapping(value = "/excel", method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> updateEntityExcel(@RequestPart(required = true) MultipartFile file) throws Exception {
 		return super.updateEntityExcel(file);
 	}

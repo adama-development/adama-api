@@ -47,8 +47,7 @@ import com.mongodb.DBObject;
  * Abstract Repository base implementation for Mongo.
  * 
  */
-public abstract class AdamaMongoRepositoryAbstract<T extends DeleteEntityAbstract, ID extends Serializable>
-		implements AdamaMongoRepository<T, ID> {
+public abstract class AdamaMongoRepositoryAbstract<T extends DeleteEntityAbstract, ID extends Serializable> implements AdamaMongoRepository<T, ID> {
 	public final MongoOperations mongoOperations;
 	public final MongoEntityInformation<T, ID> entityInformation;
 
@@ -96,8 +95,7 @@ public abstract class AdamaMongoRepositoryAbstract<T extends DeleteEntityAbstrac
 
 	public boolean exists(ID id) {
 		Assert.notNull(id, "The given id must not be null!");
-		return mongoOperations.exists(getIdQuery(id), entityInformation.getJavaType(),
-				entityInformation.getCollectionName());
+		return mongoOperations.exists(getIdQuery(id), entityInformation.getJavaType(), entityInformation.getCollectionName());
 	}
 
 	public long count() {
@@ -138,8 +136,7 @@ public abstract class AdamaMongoRepositoryAbstract<T extends DeleteEntityAbstrac
 
 	public Page<T> findAll(final Pageable pageable) {
 		Query query = new Query();
-		List<T> list = findAll(Optional.ofNullable(query.with(pageable)), Optional.ofNullable(pageable.getSort()),
-				Optional.ofNullable(pageable));
+		List<T> list = findAll(Optional.ofNullable(query.with(pageable)), Optional.ofNullable(pageable.getSort()), Optional.ofNullable(pageable));
 		Query queryCount = new Query(getFilterCriteria());
 		Long count = count(queryCount);
 		return new PageImpl<T>(list, pageable, count);
@@ -175,15 +172,10 @@ public abstract class AdamaMongoRepositoryAbstract<T extends DeleteEntityAbstrac
 		Field[] allFields = entityInformation.getJavaType().getDeclaredFields();
 		List<Criteria> criterias = new ArrayList<Criteria>();
 		if (key != null && !key.isEmpty()) {
-			Arrays.asList(allFields).stream()
-					.filter(field -> !ClassUtils.isPrimitiveOrWrapper(field.getType())
-							&& Modifier.isPrivate(field.getModifiers()))
+			Arrays.asList(allFields).stream().filter(field -> !ClassUtils.isPrimitiveOrWrapper(field.getType()) && Modifier.isPrivate(field.getModifiers()))
 					.forEach(field -> criterias.add(Criteria.where(field.getName()).regex(key, "i")));
-			List<T> list = findAll(
-					Optional.ofNullable(query
-							.addCriteria(new Criteria()
-									.orOperator((Criteria[]) criterias.toArray(new Criteria[criterias.size()])))
-					.with(pageable)), Optional.ofNullable(pageable.getSort()), Optional.ofNullable(pageable));
+			List<T> list = findAll(Optional.ofNullable(query.addCriteria(new Criteria().orOperator((Criteria[]) criterias.toArray(new Criteria[criterias.size()]))).with(pageable)),
+					Optional.ofNullable(pageable.getSort()), Optional.ofNullable(pageable));
 			Long count = count(query);
 			return new PageImpl<T>(list, pageable, count);
 		} else {
@@ -207,8 +199,7 @@ public abstract class AdamaMongoRepositoryAbstract<T extends DeleteEntityAbstrac
 	@Override
 	public List<T> findAll(Optional<Query> query) {
 		if (query.isPresent()) {
-			return mongoOperations.find(query.get(), entityInformation.getJavaType(),
-					entityInformation.getCollectionName());
+			return mongoOperations.find(query.get(), entityInformation.getJavaType(), entityInformation.getCollectionName());
 		} else {
 			return findAll();
 		}
@@ -216,25 +207,19 @@ public abstract class AdamaMongoRepositoryAbstract<T extends DeleteEntityAbstrac
 
 	@Override
 	public T findOne(Optional<Query> query) {
-		return query.map(myquery -> mongoOperations.findOne(myquery, entityInformation.getJavaType(),
-				entityInformation.getCollectionName())).orElse(null);
+		return query.map(myquery -> mongoOperations.findOne(myquery, entityInformation.getJavaType(), entityInformation.getCollectionName())).orElse(null);
 	}
 
 	private List<T> findAll(Optional<Query> query, Optional<Sort> sortQuery, Optional<Pageable> pageable) {
 		// get the list of sorting with primitive field
-		List<Order> orderPrimitiveList = sortQuery.map(mySortQuery -> StreamSupport
-				.stream(Spliterators.spliteratorUnknownSize(mySortQuery.iterator(), Spliterator.ORDERED), true)
-				.filter(order -> isTheFieldExistAndIsPrimitive(order.getProperty())).collect(Collectors.toList()))
-				.orElse(Collections.emptyList());
+		List<Order> orderPrimitiveList = sortQuery.map(
+				mySortQuery -> StreamSupport.stream(Spliterators.spliteratorUnknownSize(mySortQuery.iterator(), Spliterator.ORDERED), true)
+						.filter(order -> isTheFieldExistAndIsPrimitive(order.getProperty())).collect(Collectors.toList())).orElse(Collections.emptyList());
 		// get the list of sorting with DBRef field
-		List<Order> orderDBRefList = sortQuery
-				.map(mySortQuery -> StreamSupport
-						.stream(Spliterators.spliteratorUnknownSize(mySortQuery.iterator(), Spliterator.ORDERED), true)
-						.filter(order -> isTheFieldExistAndIsDBRef(order.getProperty())).collect(Collectors.toList()))
-				.orElse(Collections.emptyList());
-		Optional<Query> fitlerQuery = Optional
-				.ofNullable(query.map(filterQuery -> filterQuery.addCriteria(getFilterCriteria()))
-						.orElse(new Query(getFilterCriteria())));
+		List<Order> orderDBRefList = sortQuery.map(
+				mySortQuery -> StreamSupport.stream(Spliterators.spliteratorUnknownSize(mySortQuery.iterator(), Spliterator.ORDERED), true)
+						.filter(order -> isTheFieldExistAndIsDBRef(order.getProperty())).collect(Collectors.toList())).orElse(Collections.emptyList());
+		Optional<Query> fitlerQuery = Optional.ofNullable(query.map(filterQuery -> filterQuery.addCriteria(getFilterCriteria())).orElse(new Query(getFilterCriteria())));
 		if (orderPrimitiveList.isEmpty()) {
 			if (orderDBRefList.isEmpty()) {
 				return findAll(fitlerQuery);
@@ -248,23 +233,19 @@ public abstract class AdamaMongoRepositoryAbstract<T extends DeleteEntityAbstrac
 				return sortPrimitiveWithCaseInsensitive(fitlerQuery, orderPrimitiveList, pageable);
 			} else {
 				Set<T> result = new HashSet<>();
-				sortQuery.ifPresent(mySortQuery -> StreamSupport
-						.stream(Spliterators.spliteratorUnknownSize(mySortQuery.iterator(), Spliterator.ORDERED), true)
-						.forEach(order -> {
-							if (orderDBRefList.contains(order)) {
-								result.addAll(findAllWithDBRef(fitlerQuery, order));
-							} else {
-								result.addAll(
-										sortPrimitiveWithCaseInsensitive(fitlerQuery, orderPrimitiveList, pageable));
-							}
-						}));
+				sortQuery.ifPresent(mySortQuery -> StreamSupport.stream(Spliterators.spliteratorUnknownSize(mySortQuery.iterator(), Spliterator.ORDERED), true).forEach(order -> {
+					if (orderDBRefList.contains(order)) {
+						result.addAll(findAllWithDBRef(fitlerQuery, order));
+					} else {
+						result.addAll(sortPrimitiveWithCaseInsensitive(fitlerQuery, orderPrimitiveList, pageable));
+					}
+				}));
 				return result.stream().collect(Collectors.toList());
 			}
 		}
 	}
 
-	private List<T> sortPrimitiveWithCaseInsensitive(Optional<Query> query, List<Order> orderPrimitiveList,
-			Optional<Pageable> pageable) {
+	private List<T> sortPrimitiveWithCaseInsensitive(Optional<Query> query, List<Order> orderPrimitiveList, Optional<Pageable> pageable) {
 		DBCollection coll = mongoOperations.getCollection(entityInformation.getCollectionName());
 		List<DBObject> pipe = new ArrayList<DBObject>();
 		query.ifPresent(myQuery -> {
@@ -274,14 +255,12 @@ public abstract class AdamaMongoRepositoryAbstract<T extends DeleteEntityAbstrac
 		});
 		DBObject prjflds = new BasicDBObject();
 		prjflds.put("doc", "$$ROOT");
-		orderPrimitiveList.stream().forEach(order -> prjflds.put("insensitive" + order.getProperty(),
-				new BasicDBObject("$toLower", "$" + order.getProperty())));
+		orderPrimitiveList.stream().forEach(order -> prjflds.put("insensitive" + order.getProperty(), new BasicDBObject("$toLower", "$" + order.getProperty())));
 		DBObject project = new BasicDBObject();
 		project.put("$project", prjflds);
 		pipe.add(project);
 		DBObject sortflds = new BasicDBObject();
-		orderPrimitiveList.stream().forEach(order -> sortflds.put("insensitive" + order.getProperty(),
-				Direction.ASC.equals(order.getDirection()) ? 1 : -1));
+		orderPrimitiveList.stream().forEach(order -> sortflds.put("insensitive" + order.getProperty(), Direction.ASC.equals(order.getDirection()) ? 1 : -1));
 		DBObject sort = new BasicDBObject();
 		sort.put("$sort", sortflds);
 		pipe.add(sort);
@@ -294,8 +273,7 @@ public abstract class AdamaMongoRepositoryAbstract<T extends DeleteEntityAbstrac
 			pipe.add(limit);
 		});
 		AggregationOutput agg = coll.aggregate(pipe);
-		Stream<T> map = StreamSupport.stream(agg.results().spliterator(), true).map(result -> mongoOperations
-				.getConverter().read(entityInformation.getJavaType(), (DBObject) result.get("doc")));
+		Stream<T> map = StreamSupport.stream(agg.results().spliterator(), true).map(result -> mongoOperations.getConverter().read(entityInformation.getJavaType(), (DBObject) result.get("doc")));
 		return map.collect(Collectors.toList());
 	}
 
@@ -308,8 +286,7 @@ public abstract class AdamaMongoRepositoryAbstract<T extends DeleteEntityAbstrac
 				queryFull.addCriteria(criteria);
 			}
 		});
-		List<T> fullEntityList = mongoOperations.find(queryFull, entityInformation.getJavaType(),
-				entityInformation.getCollectionName());
+		List<T> fullEntityList = mongoOperations.find(queryFull, entityInformation.getJavaType(), entityInformation.getCollectionName());
 		int index = order.getProperty().indexOf(".");
 		String dbRefFieldName = order.getProperty().substring(0, index);
 		String fieldToSortInDBRef = order.getProperty().substring(index + 1);
@@ -329,18 +306,14 @@ public abstract class AdamaMongoRepositoryAbstract<T extends DeleteEntityAbstrac
 		}).filter(myObject -> myObject != null).collect(Collectors.toList());
 		if (entityDBRefObjectList != null && entityDBRefObjectList.size() != 0) {
 			Class<? extends Object> myClass = entityDBRefObjectList.get(0).getClass();
-			List<String> entityDBRefIdList = entityDBRefObjectList.stream()
-					.map(object -> (DeleteEntityAbstract.class.cast(object)).getId()).collect(Collectors.toList());
+			List<String> entityDBRefIdList = entityDBRefObjectList.stream().map(object -> (DeleteEntityAbstract.class.cast(object)).getId()).collect(Collectors.toList());
 			// TODO add the sort to this function
 			List<? extends Object> dbRefList = mongoOperations.find(
-					queryFull.addCriteria(Criteria.where(DeleteEntityAbstract.ID_FIELD_NAME).in(entityDBRefIdList))
-							.with(new Sort(order.getDirection(), fieldToSortInDBRef)),
-					myClass);
+					queryFull.addCriteria(Criteria.where(DeleteEntityAbstract.ID_FIELD_NAME).in(entityDBRefIdList)).with(new Sort(order.getDirection(), fieldToSortInDBRef)), myClass);
 			Collections.sort(fullEntityList, new Comparator<T>() {
 				public int compare(T left, T right) {
 					try {
-						return Integer.compare(dbRefList.indexOf(dbRefField.get(left)),
-								dbRefList.indexOf(dbRefField.get(right)));
+						return Integer.compare(dbRefList.indexOf(dbRefField.get(left)), dbRefList.indexOf(dbRefField.get(right)));
 					} catch (IllegalArgumentException | IllegalAccessException e) {
 						return 0;
 					}
@@ -368,8 +341,7 @@ public abstract class AdamaMongoRepositoryAbstract<T extends DeleteEntityAbstrac
 	}
 
 	private static int tryDetermineRealSizeOrReturn(Iterable<?> iterable, int defaultSize) {
-		return iterable == null ? 0
-				: (iterable instanceof Collection) ? ((Collection<?>) iterable).size() : defaultSize;
+		return iterable == null ? 0 : (iterable instanceof Collection) ? ((Collection<?>) iterable).size() : defaultSize;
 	}
 
 	private boolean isTheFieldExistAndIsPrimitive(String fieldName) {
@@ -387,8 +359,7 @@ public abstract class AdamaMongoRepositoryAbstract<T extends DeleteEntityAbstrac
 	private boolean isTheFieldExistAndIsDBRef(String fieldName) {
 		try {
 			if (fieldName.indexOf(".") != -1) {
-				Field orderField = entityInformation.getJavaType()
-						.getDeclaredField(fieldName.substring(0, fieldName.indexOf(".")));
+				Field orderField = entityInformation.getJavaType().getDeclaredField(fieldName.substring(0, fieldName.indexOf(".")));
 				if (orderField.getAnnotation(DBRef.class) != null) {
 					return true;
 				}
