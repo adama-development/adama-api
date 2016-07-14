@@ -4,6 +4,7 @@ import java.time.ZonedDateTime;
 import java.util.Optional;
 
 import javax.annotation.PostConstruct;
+import javax.inject.Inject;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.util.Assert;
@@ -12,7 +13,7 @@ import com.adama.api.domain.user.AdamaUser;
 import com.adama.api.domain.util.domain.abst.delete.DeleteEntityAbstract;
 import com.adama.api.repository.user.AdamaUserRepositoryInterface;
 import com.adama.api.repository.util.repository.AdamaMongoRepository;
-import com.adama.api.security.AdamaAuthoritiesConstants;
+import com.adama.api.security.TenantChecker;
 import com.adama.api.service.user.AdamaUserServiceInterface;
 import com.adama.api.service.util.service.abst.AdamaServiceAbstract;
 import com.adama.api.util.random.RandomUtil;
@@ -28,6 +29,8 @@ public abstract class AdamaUserServiceAbstract<D extends DeleteEntityAbstract, A
 		AdamaUserServiceInterface<A> {
 	private PasswordEncoder passwordEncoder;
 	private AdamaUserRepositoryInterface<D, A> userRepository;
+	@Inject
+	private TenantChecker tenantChecker;
 
 	@Override
 	@PostConstruct
@@ -68,11 +71,11 @@ public abstract class AdamaUserServiceAbstract<D extends DeleteEntityAbstract, A
 		user.setPassword(encryptedPassword);
 		user.setResetKey(RandomUtil.generateResetKey());
 		user.setResetDate(ZonedDateTime.now());
-		if (user.getAuthority().equals(AdamaAuthoritiesConstants.ADMIN_AUTHORITY)) {
-			// For Admin authority, the user must have no tenant
-			user.setTenant(null);
-		} else {
+		if (tenantChecker.isTenantable(user)) {
 			Assert.notNull(user.getTenant(), "For " + user.getAuthority() + " authority, the user must have a tenant");
+		} else {
+			// For authority with no tenant, the user must have no tenant
+			user.setTenant(null);
 		}
 		A newUser = userRepository.save(user);
 		log.debug("Created Information for User: {}", newUser);

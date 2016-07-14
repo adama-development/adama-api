@@ -5,6 +5,8 @@ import static org.springframework.data.mongodb.core.query.Criteria.where;
 import java.io.Serializable;
 import java.util.List;
 
+import javax.inject.Inject;
+
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.repository.query.MongoEntityInformation;
@@ -14,8 +16,7 @@ import org.springframework.util.Assert;
 import com.adama.api.domain.util.domain.abst.delete.DeleteEntityAbstract;
 import com.adama.api.domain.util.domain.abst.tenant.TenantEntityAbstract;
 import com.adama.api.repository.util.repository.AdamaMongoRepository;
-import com.adama.api.security.AdamaAuthoritiesConstants;
-import com.adama.api.util.security.SecurityUtils;
+import com.adama.api.security.TenantChecker;
 
 /**
  * Adama Repository base implementation for Mongo with multi tenancy
@@ -24,6 +25,9 @@ import com.adama.api.util.security.SecurityUtils;
 @NoRepositoryBean
 public abstract class AdamaMongoTenantRepositoryAbstract<D extends DeleteEntityAbstract, T extends TenantEntityAbstract<D>, ID extends Serializable> extends AdamaMongoRepositoryAbstract<T, ID>
 		implements AdamaMongoRepository<T, ID> {
+	@Inject
+	private TenantChecker tenantChecker;
+
 	public AdamaMongoTenantRepositoryAbstract(MongoEntityInformation<T, ID> metadata, MongoOperations mongoOperations) {
 		super(metadata, mongoOperations);
 	}
@@ -32,7 +36,7 @@ public abstract class AdamaMongoTenantRepositoryAbstract<D extends DeleteEntityA
 
 	@Override
 	public <S extends T> S save(S entity) {
-		if (!SecurityUtils.isCurrentUserInRole(AdamaAuthoritiesConstants.ADMIN)) {
+		if (tenantChecker.isTenantable(null)) {
 			entity.setTenant(getCurrentAuthTenant());
 		}
 		return super.save(entity);
@@ -47,7 +51,7 @@ public abstract class AdamaMongoTenantRepositoryAbstract<D extends DeleteEntityA
 	public T findOne(ID id) {
 		Assert.notNull(id, "The given id must not be null!");
 		T entity = mongoOperations.findById(id, entityInformation.getJavaType(), entityInformation.getCollectionName());
-		if (!SecurityUtils.isCurrentUserInRole(AdamaAuthoritiesConstants.ADMIN)) {
+		if (tenantChecker.isTenantable(null)) {
 			Assert.isTrue(entity.getTenant().getId().equals(getCurrentAuthTenant().getId()), "You are not logged with a tenant that can access this resource");
 		}
 		return entity;
@@ -55,7 +59,7 @@ public abstract class AdamaMongoTenantRepositoryAbstract<D extends DeleteEntityA
 
 	@Override
 	public <S extends T> S insert(S entity) {
-		if (!SecurityUtils.isCurrentUserInRole(AdamaAuthoritiesConstants.ADMIN)) {
+		if (tenantChecker.isTenantable(null)) {
 			entity.setTenant(getCurrentAuthTenant());
 		}
 		return super.insert(entity);
@@ -69,7 +73,7 @@ public abstract class AdamaMongoTenantRepositoryAbstract<D extends DeleteEntityA
 	@Override
 	protected Criteria getIdCriteria(Object id) {
 		Criteria criteria = where(entityInformation.getIdAttribute()).is(id);
-		if (!SecurityUtils.isCurrentUserInRole(AdamaAuthoritiesConstants.ADMIN)) {
+		if (tenantChecker.isTenantable(null)) {
 			criteria = criteria.and(TenantEntityAbstract.TENANT_FIELD_NAME).is(getCurrentAuthTenant());
 		}
 		return criteria;
@@ -78,7 +82,7 @@ public abstract class AdamaMongoTenantRepositoryAbstract<D extends DeleteEntityA
 	@Override
 	protected Criteria getFilterCriteria() {
 		Criteria criteria = Criteria.where(DeleteEntityAbstract.ACTIVE_FIELD_NAME).is(true);
-		if (!SecurityUtils.isCurrentUserInRole(AdamaAuthoritiesConstants.ADMIN)) {
+		if (tenantChecker.isTenantable(null)) {
 			criteria = criteria.and(TenantEntityAbstract.TENANT_FIELD_NAME + "." + TenantEntityAbstract.ID_FIELD_NAME).is(getCurrentAuthTenant().getId());
 		}
 		return criteria;

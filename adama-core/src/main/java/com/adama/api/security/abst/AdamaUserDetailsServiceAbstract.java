@@ -5,7 +5,6 @@ import java.util.Optional;
 
 import javax.annotation.PostConstruct;
 
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -41,7 +40,7 @@ public abstract class AdamaUserDetailsServiceAbstract<D extends DeleteEntityAbst
 		if (!userFromDatabase.isPresent() && userRepository.count() == 0) {
 			// if no user created, we give access as admin (for the first login)
 			return new org.springframework.security.core.userdetails.User(adamaProperties.getSecurity().getDefaultFirstLogin(), passwordEncoder.encode(adamaProperties.getSecurity()
-					.getDefaultFirstPassword()), Collections.singletonList(new SimpleGrantedAuthority(AdamaAuthoritiesConstants.ADMIN)));
+					.getDefaultFirstPassword()), Collections.singletonList(AdamaAuthoritiesConstants.ADMIN_AUTHORITY));
 		}
 		return userFromDatabase.map(user -> {
 			return new org.springframework.security.core.userdetails.User(lowercaseLogin, user.getPassword(), Collections.singletonList(user.getAuthority()));

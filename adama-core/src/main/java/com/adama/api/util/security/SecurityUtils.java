@@ -1,12 +1,17 @@
 package com.adama.api.util.security;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+
+import com.adama.api.security.AdamaAuthoritiesConstants;
 
 /**
  * Utility class for Spring Security.
@@ -50,22 +55,35 @@ public final class SecurityUtils {
 	 * Servlet API
 	 * </p>
 	 *
-	 * @param authority
+	 * @param adminAuthority
 	 *            the authorithy to check
 	 * @return true if the current user has the authority, false otherwise
 	 */
-	public static boolean isCurrentUserInRole(String authority) {
+	public static boolean isCurrentUserInRole(GrantedAuthority authority) {
+		return isCurrentUserInRole(Arrays.asList(new GrantedAuthority[] { authority }));
+	}
+
+	public static boolean isCurrentUserInRole(List<GrantedAuthority> authorityList) {
 		SecurityContext securityContext = SecurityContextHolder.getContext();
 		Authentication authentication = securityContext.getAuthentication();
 		if (authentication != null) {
+			Collection<? extends GrantedAuthority> authorities;
 			if (authentication.getPrincipal() instanceof UserDetails) {
 				UserDetails springSecurityUser = (UserDetails) authentication.getPrincipal();
-				return springSecurityUser.getAuthorities().contains(new SimpleGrantedAuthority(authority));
+				authorities = springSecurityUser.getAuthorities();
 			} else {
-				return authentication.getAuthorities().contains(new SimpleGrantedAuthority(authority));
+				authorities = authentication.getAuthorities();
 			}
+			return authorityList.stream()//
+					.map(authority -> authorities.contains(authority)) //
+					.reduce(false, (result, isInRole) -> result || isInRole)//
+			;
 		}
 		return false;
+	}
+
+	public static boolean isAdmin() {
+		return isCurrentUserInRole(AdamaAuthoritiesConstants.ADMIN_AUTHORITY);
 	}
 
 	/**
