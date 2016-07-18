@@ -5,8 +5,6 @@ import static org.springframework.data.mongodb.core.query.Criteria.where;
 import java.io.Serializable;
 import java.util.List;
 
-import javax.inject.Inject;
-
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.repository.query.MongoEntityInformation;
@@ -25,11 +23,11 @@ import com.adama.api.security.TenantChecker;
 @NoRepositoryBean
 public abstract class AdamaMongoTenantRepositoryAbstract<D extends DeleteEntityAbstract, T extends TenantEntityAbstract<D>, ID extends Serializable> extends AdamaMongoRepositoryAbstract<T, ID>
 		implements AdamaMongoRepository<T, ID> {
-	@Inject
 	private TenantChecker tenantChecker;
 
-	public AdamaMongoTenantRepositoryAbstract(MongoEntityInformation<T, ID> metadata, MongoOperations mongoOperations) {
+	public AdamaMongoTenantRepositoryAbstract(MongoEntityInformation<T, ID> metadata, MongoOperations mongoOperations, TenantChecker tenantChecker) {
 		super(metadata, mongoOperations);
+		this.tenantChecker = tenantChecker;
 	}
 
 	abstract public D getCurrentAuthTenant();
