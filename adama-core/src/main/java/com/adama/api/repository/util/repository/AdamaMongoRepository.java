@@ -36,7 +36,7 @@ public interface AdamaMongoRepository<T extends DeleteEntityAbstract, ID extends
 	 * @param pageable
 	 * @return
 	 */
-	Page<T> findAllQueryPageable(Optional<Query> query, Pageable pageable);
+	Page<T> findAllQueryPageable(Optional<Query> query, Optional<Pageable> pageable);
 
 	/**
 	 * find all with the query
