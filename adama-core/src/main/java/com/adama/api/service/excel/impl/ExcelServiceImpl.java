@@ -297,7 +297,7 @@ public class ExcelServiceImpl implements ExcelServiceInterface {
 			cell.setCellValue((Long) value);
 		}
 		if (value instanceof BigDecimal) {
-			cell.setCellValue(((BigDecimal) value).longValue());
+			cell.setCellValue(((BigDecimal) value).doubleValue());
 		}
 		if (value instanceof String) {
 			try {
