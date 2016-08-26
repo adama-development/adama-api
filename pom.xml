@@ -38,7 +38,7 @@
         <poi.version>3.13</poi.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <servlet-api.version>2.5</servlet-api.version>
-        <springfox.version>2.5.0</springfox.version>
+        <springfox.version>2.4.0</springfox.version>
         <wnameless.version>0.2.1</wnameless.version>
     </properties>
     <dependencyManagement>
