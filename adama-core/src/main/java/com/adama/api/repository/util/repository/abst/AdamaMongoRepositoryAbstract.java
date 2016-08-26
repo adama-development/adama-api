@@ -182,15 +182,14 @@ public abstract class AdamaMongoRepositoryAbstract<T extends DeleteEntityAbstrac
 
 	@Override
 	public List<T> findAll(Optional<Query> query) {
-		Optional<Query> queryOptional = Optional.empty();
 		Optional<Sort> sortOptional = Optional.empty();
 		Optional<Pageable> pageableOptional = Optional.empty();
-		return findAll(queryOptional, sortOptional, pageableOptional);
+		return findAll(query, sortOptional, pageableOptional);
 	}
 
 	@Override
 	public List<T> findAll() {
-		Optional<Query> queryOptional = Optional.of(new Query());
+		Optional<Query> queryOptional = Optional.empty();
 		Optional<Sort> sortOptional = Optional.empty();
 		Optional<Pageable> pageableOptional = Optional.empty();
 		return findAll(queryOptional, sortOptional, pageableOptional);
